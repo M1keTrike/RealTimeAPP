@@ -4,6 +4,7 @@ import { DatabaseModule } from './core/infrastructure/database/database.module';
 import { UsersModule } from './modules/users/infrastructure/users.module';
 import { AuthModule } from './modules/auth/infrastructure/auth.module';
 import { GameSessionsModule } from './modules/game-sessions/infrastructure/game-sessions.module';
+import { QuestionsModule } from './modules/questions/infrastructure/questions.module';
 
 @Module({
   imports: [
@@ -14,7 +15,8 @@ import { GameSessionsModule } from './modules/game-sessions/infrastructure/game-
     DatabaseModule,
     UsersModule,
     AuthModule,
-    GameSessionsModule
+    GameSessionsModule, 
+    QuestionsModule
   ],
   controllers: [],
   providers: [],
