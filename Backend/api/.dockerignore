@@ -1,0 +1,11 @@
+# Dependencias
+node_modules
+npm-debug.log
+pnpm-debug.log
+
+# Archivos compilados
+dist
+
+# Entornos y git
+.git
+.env

@@ -1,0 +1,41 @@
+
+
+services:
+  db-postgres:
+    image: postgres:15-alpine
+    container_name: mathduel_db
+    restart: always
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: adminpassword
+      POSTGRES_DB: mathduel_db
+    ports:
+      - "5432:5432" # Puerto mapeado a tu computadora local
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  api-nest:
+    build: 
+      context: ./Backend/api
+      dockerfile: Dockerfile
+    container_name: mathduel_api
+    restart: always
+    ports:
+      - "3000:3000" # Puerto mapeado a tu computadora local
+    environment:
+      # Conexión a la base de datos (Nota que el DB_HOST es el nombre del contenedor de arriba)
+      - DB_HOST=db-postgres
+      - DB_PORT=5432
+      - DB_USER=admin
+      - DB_PASSWORD=adminpassword
+      - DB_NAME=mathduel_db
+      
+      # Variables de autenticación
+      - JWT_SECRET=tu_super_secreto_jwt_local
+      - JWT_EXPIRES_IN=7d
+      - PORT=3000
+    depends_on:
+      - db-postgres # Espera a que la base de datos inicie primero
+
+volumes:
+  pgdata:
