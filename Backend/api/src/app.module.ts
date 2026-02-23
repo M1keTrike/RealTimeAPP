@@ -16,20 +16,5 @@ import { AuthModule } from './modules/auth/infrastructure/auth.module';
   ],
   controllers: [],
   providers: [],
-
-import { ConfigModule } from '@nestjs/config';
-import { DatabaseModule } from './core/infrastructure/database/database.module';
-
-@Module({
-  imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-      envFilePath: '.env', 
-    }),
-    DatabaseModule,
-  ],
-  controllers: [],
-  providers: [],
-
 })
 export class AppModule {}
