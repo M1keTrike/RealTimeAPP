@@ -1,22 +1,20 @@
 import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { GameSessionsController } from '../presentation/game-sessions.controller';
 import { JoinOrCreateSessionUseCase } from '../application/use-cases/join-or-create-session.use-case';
 import { GAME_SESSION_REPOSITORY } from '../domain/repositories/game-session.repository.interface';
-
-// Un mock temporal para que compile y funcione sin base de datos real aún
-const mockRepository = {
-  save: jest.fn(),
-  findById: jest.fn(),
-  findAvailableSession: jest.fn().mockResolvedValue(null), 
-};
+import { GameSessionTypeOrmRepository } from './persistence/game-session.repository';
+import { GameSessionOrmEntity } from './persistence/game-session.orm-entity';
+import { RoundOrmEntity } from './persistence/round.orm-entity';
 
 @Module({
+  imports: [TypeOrmModule.forFeature([GameSessionOrmEntity, RoundOrmEntity])],
   controllers: [GameSessionsController],
   providers: [
     JoinOrCreateSessionUseCase,
     {
       provide: GAME_SESSION_REPOSITORY,
-      useValue: mockRepository,
+      useClass: GameSessionTypeOrmRepository,
     },
   ],
 })

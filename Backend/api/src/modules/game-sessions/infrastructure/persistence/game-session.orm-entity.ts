@@ -1,4 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToMany } from 'typeorm';
+import { RoundOrmEntity } from './round.orm-entity';
 
 @Entity('game_sessions')
 export class GameSessionOrmEntity {
@@ -19,4 +20,9 @@ export class GameSessionOrmEntity {
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
+  
+  @OneToMany(() => RoundOrmEntity, (round) => round.gameSession, {
+    cascade: true,
+  })
+  rounds: RoundOrmEntity[];
 }
