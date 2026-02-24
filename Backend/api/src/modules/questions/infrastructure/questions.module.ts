@@ -9,6 +9,10 @@ import { QuestionsController } from '../presentation/questions.controller';
 import { CreateQuestionUseCase } from '../application/use-cases/create-question.use-case';
 import { GetRandomQuestionUseCase } from '../application/use-cases/get-random-question.use-case';
 
+import { GetAllQuestionsUseCase } from '../application/use-cases/get-all-questions.use-case';
+import { UpdateQuestionUseCase } from '../application/use-cases/update-question.use-case';
+import { DeleteQuestionUseCase } from '../application/use-cases/delete-question.use-case';
+
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -21,6 +25,9 @@ import { GetRandomQuestionUseCase } from '../application/use-cases/get-random-qu
   providers: [
     CreateQuestionUseCase,
     GetRandomQuestionUseCase,
+    GetAllQuestionsUseCase, 
+    UpdateQuestionUseCase, 
+    DeleteQuestionUseCase,
     {
       provide: QUESTION_REPOSITORY,
       useClass: QuestionTypeOrmRepository,

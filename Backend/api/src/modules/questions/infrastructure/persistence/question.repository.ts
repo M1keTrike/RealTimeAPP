@@ -29,4 +29,27 @@ export class QuestionTypeOrmRepository implements IQuestionRepository {
     if (!ormEntity) return null;
     return QuestionMapper.toDomain(ormEntity);
   }
+
+  async findAll(): Promise<Question[]> {
+    const ormEntities = await this.repository.find({
+      relations: ['options', 'correctOption'],
+    });
+    return ormEntities.map(orm => QuestionMapper.toDomain(orm));
+  }
+
+  async findById(id: string): Promise<Question | null> {
+    const ormEntity = await this.repository.findOne({
+      where: { id },
+      relations: ['options', 'correctOption'],
+    });
+    if (!ormEntity) return null;
+    return QuestionMapper.toDomain(ormEntity);
+  }
+
+  async delete(id: string): Promise<void> {
+    const entity = await this.repository.findOne({ where: { id }, relations: ['options', 'correctOption'] });
+    if (entity) {
+      await this.repository.remove(entity); // remove dispara los cascades de eliminación
+    }
+  }
 }
