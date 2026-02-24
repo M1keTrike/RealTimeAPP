@@ -67,4 +67,8 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
-}
+    implementation(libs.androidx.lifecycle.viewmodel.compose)       // viewModel()
+    implementation(libs.com.squareup.retrofit2.retrofit)            // Retrofit
+    implementation(libs.com.squareup.retrofit2.converter.json)
+    implementation(libs.androidx.datastore.preferences)
+    implementation("androidx.compose.material:material-icons-extended:1.7.8")}
