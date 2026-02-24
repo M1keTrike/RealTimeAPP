@@ -17,6 +17,9 @@ export class UserOrmEntity {
   @Column({ name: 'elo_rating', type: 'int', default: 1200 })
   eloRating: number;
 
+  @Column({ type: 'enum', enum: ['PLAYER', 'ADMIN'], default: 'PLAYER' })
+  role: string;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 }

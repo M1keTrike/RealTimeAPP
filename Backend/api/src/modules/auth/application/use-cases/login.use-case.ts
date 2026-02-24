@@ -28,6 +28,7 @@ export class LoginUseCase {
       sub: user.id,
       email: user.email,
       username: user.username,
+      role: user.role,
     };
 
     const accessToken = this.jwtService.sign(payload);
