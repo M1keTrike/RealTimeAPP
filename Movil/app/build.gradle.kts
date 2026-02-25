@@ -5,7 +5,7 @@ plugins {
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.ksp)
     alias(libs.plugins.google.gms.google.services)
-}
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.0.0"}
 
 android {
     namespace = "com.duelmath"
@@ -33,11 +33,13 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
-    kotlinOptions {
-        jvmTarget = "11"
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
+        }
     }
     buildFeatures {
         compose = true
@@ -67,4 +69,10 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
-}
+    implementation(libs.androidx.lifecycle.viewmodel.compose)       // viewModel()
+    implementation(libs.com.squareup.retrofit2.retrofit)            // Retrofit
+    implementation(libs.com.squareup.retrofit2.converter.json)
+    implementation(libs.androidx.datastore.preferences)
+    implementation("androidx.hilt:hilt-navigation-compose:1.3.0")
+    implementation("androidx.compose.material:material-icons-extended:1.7.8")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")}
