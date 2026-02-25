@@ -4,12 +4,13 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -18,22 +19,24 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.duelmath.features.auth.presentation.components.*
 import com.duelmath.features.auth.presentation.viewmodels.AuthViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LoginScreen(
+fun RegisterScreen(
     viewModel: AuthViewModel = hiltViewModel(),
-    onNavigateToRegister: () -> Unit,
-    onLoginSuccess: () -> Unit
+    onNavigateToLogin: () -> Unit,
+    onRegisterSuccess: () -> Unit
 ) {
+    val username by viewModel.username.collectAsStateWithLifecycle()
     val email by viewModel.email.collectAsStateWithLifecycle()
     val password by viewModel.password.collectAsStateWithLifecycle()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     val snackbarHostState = remember { SnackbarHostState() }
 
-    LaunchedEffect(uiState.loginSuccess, uiState.errorMessage) {
-        if (uiState.loginSuccess) {
+    LaunchedEffect(uiState.registerSuccess, uiState.errorMessage) {
+        if (uiState.registerSuccess) {
             viewModel.resetSuccessStates()
-            onLoginSuccess()
+            onRegisterSuccess()
         }
         if (uiState.errorMessage != null) {
             snackbarHostState.showSnackbar(uiState.errorMessage!!)
@@ -44,7 +47,24 @@ fun LoginScreen(
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         containerColor = DarkBackground,
-        snackbarHost = { SnackbarHost(snackbarHostState) }
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        topBar = {
+            TopAppBar(
+                title = { Text("") },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.Transparent,
+                    navigationIconContentColor = Color.White
+                ),
+                navigationIcon = {
+                    IconButton(onClick = onNavigateToLogin) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Volver al Login"
+                        )
+                    }
+                }
+            )
+        }
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -55,8 +75,7 @@ fun LoginScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            AuthHeader("Sign In", "Welcome back to the arena")
-
+            AuthHeader("Sign Up", "Create your account to start dueling")
             Spacer(modifier = Modifier.height(32.dp))
 
             AuthSocialLogins(
@@ -64,7 +83,14 @@ fun LoginScreen(
             )
 
             Spacer(modifier = Modifier.height(24.dp))
-
+            AuthTextField(
+                value = username,
+                onValueChange = { viewModel.username.value = it },
+                label = "Username",
+                placeholder = "patata",
+                keyboardType = KeyboardType.Text
+            )
+            Spacer(modifier = Modifier.height(16.dp))
             AuthTextField(
                 value = email,
                 onValueChange = { viewModel.email.value = it },
@@ -77,30 +103,17 @@ fun LoginScreen(
                 value = password,
                 onValueChange = { viewModel.password.value = it },
                 label = "Password",
-                placeholder = "Enter your password",
+                placeholder = "At least 6 characters",
                 isPassword = true
             )
 
             Spacer(modifier = Modifier.height(32.dp))
 
             AuthMainButton(
-                text = "Sign In",
-                onClick = { viewModel.login() },
+                text = "Create Account",
+                onClick = { viewModel.register() },
                 isLoading = uiState.isLoading
             )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Row(horizontalArrangement = Arrangement.Center) {
-                Text("Don't have an account? ", color = TextGray, fontSize = 14.sp)
-                Text(
-                    text = "Sign up",
-                    color = Color.White,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.clickable { onNavigateToRegister() }
-                )
-            }
         }
     }
 }

@@ -3,7 +3,18 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { USER_REPOSITORY } from '../../../users/domain/repositories/user.repository.interface';
 import type { IUserRepository } from '../../../users/domain/repositories/user.repository.interface';
+import type { UserRole } from '../../../users/domain/entities/user.entity';
 import { LoginDto } from '../dtos/login.dto';
+
+export interface LoginResponse {
+  accessToken: string;
+  id: string;
+  username: string;
+  email: string;
+  eloRating: number;
+  role: UserRole;
+  createdAt: Date;
+}
 
 @Injectable()
 export class LoginUseCase {
@@ -13,7 +24,7 @@ export class LoginUseCase {
     private readonly jwtService: JwtService,
   ) {}
 
-  async execute(dto: LoginDto): Promise<{ accessToken: string }> {
+  async execute(dto: LoginDto): Promise<LoginResponse> {
     const user = await this.userRepo.findByEmail(dto.email);
     if (!user) {
       throw new UnauthorizedException('Credenciales inválidas.');
@@ -32,6 +43,14 @@ export class LoginUseCase {
     };
 
     const accessToken = this.jwtService.sign(payload);
-    return { accessToken };
+    return {
+      accessToken,
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      eloRating: user.eloRating,
+      role: user.role,
+      createdAt: user.createdAt,
+    };
   }
 }

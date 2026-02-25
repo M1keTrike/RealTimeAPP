@@ -2,13 +2,13 @@ package com.duelmath.features.auth.domain.usecases
 
 import com.duelmath.features.auth.domain.entities.User
 import com.duelmath.features.auth.domain.repositories.AuthRepository
-import jakarta.inject.Inject
+import javax.inject.Inject
 
 class RegisterUseCase @Inject constructor(
     private val authRepository: AuthRepository
 ) {
-    suspend operator fun invoke(email: String, password: String): Result<User> {
-        if (email.isBlank() || password.isBlank()) {
+    suspend operator fun invoke(username: String,email: String, password: String): Result<User> {
+        if (username.isBlank() || email.isBlank() || password.isBlank()) {
             return Result.failure(Exception("Todos los campos son obligatorios"))
         }
         if (password.length < 6) {
@@ -17,6 +17,6 @@ class RegisterUseCase @Inject constructor(
         if (!email.contains("@")) {
             return Result.failure(Exception("Ingresa un correo válido"))
         }
-        return authRepository.register( email, password)
+        return authRepository.register( username,email, password)
     }
 }

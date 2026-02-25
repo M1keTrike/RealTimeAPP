@@ -20,7 +20,7 @@ fun TokenResponse.toDomain(): AuthResult {
     return AuthResult(
         user = user,
         accessToken = this.accessToken,
-        tokenType = this.tokenType
+        tokenType = "Bearer"
     )
 
 }

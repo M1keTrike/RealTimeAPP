@@ -10,7 +10,6 @@ data class LoginRequest(
 
 data class TokenResponse(
     val accessToken: String,
-    val tokenType: String = "Bearer",
     val id: String,
     val username: String,
     val email: String,
@@ -20,6 +19,7 @@ data class TokenResponse(
 )
 
 data class RegisterRequest(
+    val username: String,
     val email: String,
     val password: String
 )

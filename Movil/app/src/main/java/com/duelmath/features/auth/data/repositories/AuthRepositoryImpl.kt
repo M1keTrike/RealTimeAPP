@@ -8,7 +8,7 @@ import com.duelmath.features.auth.data.datasources.remote.model.RegisterRequest
 import com.duelmath.features.auth.domain.entities.AuthResult
 import com.duelmath.features.auth.domain.entities.User
 import com.duelmath.features.auth.domain.repositories.AuthRepository
-import jakarta.inject.Inject
+import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -41,11 +41,11 @@ class AuthRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun register( email: String, password: String): Result<User> {
+    override suspend fun register( username: String,email: String, password: String): Result<User> {
         return withContext(Dispatchers.IO) {
             try {
 
-                val request = RegisterRequest( email = email, password = password)
+                val request = RegisterRequest( username= username, email = email, password = password)
                 val response = authApiService.register(request)
                 Result.success(response.data.toDomain())
 
