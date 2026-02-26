@@ -6,6 +6,7 @@ import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import com.duelmath.core.di.WsBaseUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
@@ -14,10 +15,9 @@ import okhttp3.WebSocketListener
 import org.json.JSONObject
 import javax.inject.Inject
 
-private const val WS_BASE_URL = "ws://10.14.0.94:8080/ws"
-
 class GameWebSocketDataSourceImpl @Inject constructor(
-    private val okHttpClient: OkHttpClient
+    private val okHttpClient: OkHttpClient,
+    @WsBaseUrl private val wsBaseUrl: String
 ) : GameWebSocketDataSource {
 
     private val _messages = MutableSharedFlow<GameWsMessage>(
@@ -31,7 +31,7 @@ class GameWebSocketDataSourceImpl @Inject constructor(
 
     override fun connect(token: String) {
         val request = Request.Builder()
-            .url("$WS_BASE_URL?token=$token")
+            .url("$wsBaseUrl?token=$token")
             .build()
         webSocket = okHttpClient.newWebSocket(request, GameWebSocketListener())
     }
