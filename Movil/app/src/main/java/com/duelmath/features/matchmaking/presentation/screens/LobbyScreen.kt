@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.duelmath.core.ui.components.DuelMathLoadingIndicator
 import com.duelmath.features.auth.presentation.components.AuthHeader
 import com.duelmath.features.auth.presentation.components.DarkBackground
 import com.duelmath.features.matchmaking.domain.entities.GameSessionStatus
@@ -52,11 +53,9 @@ fun LobbyScreen(
             Spacer(modifier = Modifier.height(64.dp))
 
             if (uiState.isSearching || uiState.currentSession?.status == GameSessionStatus.WAITING) {
-                CircularProgressIndicator(color = Color(0xFF2563EB))
-                Spacer(modifier = Modifier.height(16.dp))
-
                 val text = if (uiState.isSearching) "Buscando oponente..." else "Sala creada. Esperando al jugador 2..."
-                Text(text, color = Color.LightGray, fontSize = 16.sp)
+
+                DuelMathLoadingIndicator(message = text)
 
                 Spacer(modifier = Modifier.height(32.dp))
 

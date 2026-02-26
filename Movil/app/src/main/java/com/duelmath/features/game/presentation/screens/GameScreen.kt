@@ -30,6 +30,7 @@ import com.duelmath.features.game.domain.entities.GameOption
 import com.duelmath.features.game.presentation.viewmodels.GameSideEffect
 import com.duelmath.features.game.presentation.viewmodels.GameUiState
 import com.duelmath.features.game.presentation.viewmodels.GameViewModel
+import com.duelmath.core.ui.components.DuelMathLoadingIndicator
 
 private val DarkBg       = Color(0xFF0D1117)
 private val CardBg       = Color(0xFF161B22)
@@ -67,22 +68,39 @@ fun GameScreen(
     Surface(modifier = Modifier.fillMaxSize(), color = DarkBg) {
         Box(modifier = Modifier.fillMaxSize()) {
             when {
-                uiState.isConnecting -> ConnectingContent()
-                uiState.isWaiting    -> WaitingContent()
-                uiState.isGameOver   -> GameOverOverlay(uiState, onGameOver)
-                uiState.question != null -> ActiveGameContent(
-                    uiState = uiState,
-                    onAnswerSelected = { optionId ->
-                        uiState.question?.let { q ->
-                            viewModel.selectAnswer(q.id, optionId)
+                uiState.isConnecting -> {
+                    DuelMathLoadingIndicator(
+                        message = "Conectando al servidor...",
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+                uiState.isWaiting -> {
+                    DuelMathLoadingIndicator(
+                        message = "Sala creada. Esperando al jugador 2...",
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+                uiState.isGameOver -> GameOverOverlay(uiState, onGameOver)
+                uiState.question != null -> {
+                    ActiveGameContent(
+                        uiState = uiState,
+                        onAnswerSelected = { optionId ->
+                            uiState.question?.let { q ->
+                                viewModel.selectAnswer(q.id, optionId)
+                            }
+                        },
+                        onQuit = {
+                            viewModel.disconnect()
+                            onGameOver()
                         }
-                    },
-                    onQuit = {
-                        viewModel.disconnect()
-                        onGameOver()
-                    }
-                )
-                else -> ConnectingContent()
+                    )
+                }
+                else -> {
+                    DuelMathLoadingIndicator(
+                        message = "Conectando al servidor...",
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
             }
         }
     }
