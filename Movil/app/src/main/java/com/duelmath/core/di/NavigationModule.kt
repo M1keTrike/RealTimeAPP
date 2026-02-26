@@ -4,6 +4,7 @@ import com.duelmath.core.navigation.FeatureNavGraph
 import com.duelmath.features.auth.navigation.AuthNavGraph
 import com.duelmath.features.game.navigation.GameNavGraph
 import com.duelmath.features.matchmaking.navigation.MatchmakingNavGraph
+import com.duelmath.features.questions.navigation.QuestionsNavGraph
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -30,6 +31,12 @@ abstract class NavigationModule {
     @IntoSet
     abstract fun bindGameNavGraph(
         gameNavGraph: GameNavGraph
+    ): FeatureNavGraph
+
+    @Binds
+    @IntoSet
+    abstract fun bindQuestionsNavGraph(
+        questionsNavGraph: QuestionsNavGraph
     ): FeatureNavGraph
 
 }

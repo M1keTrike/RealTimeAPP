@@ -8,5 +8,7 @@ interface AuthLocalDataSource {
 
     suspend fun saveUsername(username: String)
     suspend fun getUsername(): String?
+    suspend fun saveUserRole(role: String)
+    suspend fun getUserRole(): String?
     suspend fun clearSession()
 }

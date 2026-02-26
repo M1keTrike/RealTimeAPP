@@ -3,6 +3,7 @@ package com.duelmath.features.matchmaking.presentation.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.duelmath.features.auth.data.datasources.local.AuthLocalDataSource
+import com.duelmath.features.auth.domain.entities.UserRole
 import com.duelmath.features.matchmaking.domain.usecases.CancelMatchUseCase
 import com.duelmath.features.matchmaking.domain.usecases.FindMatchUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -22,6 +23,17 @@ class LobbyViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(LobbyState())
     val uiState: StateFlow<LobbyState> = _uiState.asStateFlow()
+
+    init {
+        loadUserRole()
+    }
+
+    private fun loadUserRole() {
+        viewModelScope.launch {
+            val role = localDataSource.getUserRole()
+            _uiState.update { it.copy(isAdmin = role == UserRole.ADMIN.value) }
+        }
+    }
 
     fun startMatchmaking() {
         viewModelScope.launch {

@@ -97,7 +97,22 @@ class AuthViewModel @Inject constructor(
         _uiState.update { it.copy(errorMessage = null) }
     }
 
+    fun setLoginPasswordVisible(isVisible: Boolean) {
+        _uiState.update { it.copy(isLoginPasswordVisible = isVisible) }
+    }
+
+    fun setRegisterPasswordVisible(isVisible: Boolean) {
+        _uiState.update { it.copy(isRegisterPasswordVisible = isVisible) }
+    }
+
     fun resetSuccessStates() {
-        _uiState.update { it.copy(loginSuccess = false, registerSuccess = false) }
+        _uiState.update {
+            it.copy(
+                loginSuccess = false,
+                registerSuccess = false,
+                isLoginPasswordVisible = false,
+                isRegisterPasswordVisible = false,
+            )
+        }
     }
 }
