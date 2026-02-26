@@ -30,3 +30,7 @@ data class UserResponse(
     val email: String,
     val eloRating: Int
 )
+
+data class GoogleSignInRequest(
+    val idToken: String
+)

@@ -11,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -26,6 +27,7 @@ fun RegisterScreen(
     onNavigateToLogin: () -> Unit,
     onRegisterSuccess: () -> Unit
 ) {
+    val context = LocalContext.current
     val username by viewModel.username.collectAsStateWithLifecycle()
     val email by viewModel.email.collectAsStateWithLifecycle()
     val password by viewModel.password.collectAsStateWithLifecycle()
@@ -79,7 +81,7 @@ fun RegisterScreen(
             Spacer(modifier = Modifier.height(32.dp))
 
             AuthSocialLogins(
-                onGoogleClick = { /* TODO: Implementar Google Auth a futuro */ },
+                onGoogleClick = { viewModel.googleSignIn(context) },
             )
 
             Spacer(modifier = Modifier.height(24.dp))

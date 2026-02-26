@@ -16,7 +16,8 @@ export class GoogleTokenVerifierService {
   private readonly clientId: string;
 
   constructor(private readonly configService: ConfigService) {
-    this.clientId = this.configService.get<string>('GOOGLE_CLIENT_ID') ?? '';
+    this.clientId =
+      '519791700688-lg6fu6r3ungtefs1hg9l8e7em68pffrs.apps.googleusercontent.com';
     this.client = new OAuth2Client(this.clientId);
   }
 
