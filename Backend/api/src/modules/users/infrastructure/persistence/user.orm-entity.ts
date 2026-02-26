@@ -1,4 +1,9 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+} from 'typeorm';
 
 @Entity('users')
 export class UserOrmEntity {
@@ -11,14 +16,22 @@ export class UserOrmEntity {
   @Column({ type: 'varchar', unique: true })
   email: string;
 
-  @Column({ name: 'password_hash', type: 'varchar' })
-  passwordHash: string;
+  @Column({ name: 'password_hash', type: 'varchar', nullable: true })
+  passwordHash: string | null;
 
   @Column({ name: 'elo_rating', type: 'int', default: 1200 })
   eloRating: number;
 
   @Column({ type: 'enum', enum: ['PLAYER', 'ADMIN'], default: 'PLAYER' })
   role: string;
+
+  @Column({
+    name: 'auth_provider',
+    type: 'enum',
+    enum: ['LOCAL', 'GOOGLE', 'BOTH'],
+    default: 'LOCAL',
+  })
+  authProvider: string;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

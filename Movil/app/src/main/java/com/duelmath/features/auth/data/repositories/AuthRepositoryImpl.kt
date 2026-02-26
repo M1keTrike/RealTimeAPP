@@ -3,6 +3,7 @@ package com.duelmath.features.auth.data.repositories
 import com.duelmath.features.auth.data.datasources.local.AuthLocalDataSource
 import com.duelmath.features.auth.data.datasources.remote.api.AuthApiService
 import com.duelmath.features.auth.data.datasources.remote.mapper.toDomain
+import com.duelmath.features.auth.data.datasources.remote.model.GoogleSignInRequest
 import com.duelmath.features.auth.data.datasources.remote.model.LoginRequest
 import com.duelmath.features.auth.data.datasources.remote.model.RegisterRequest
 import com.duelmath.features.auth.domain.entities.AuthResult
@@ -17,7 +18,7 @@ import retrofit2.HttpException
 class AuthRepositoryImpl @Inject constructor(
     private val authApiService: AuthApiService,
     private val localDataSource: AuthLocalDataSource
-): AuthRepository {
+) : AuthRepository {
 
     override suspend fun login(email: String, password: String): Result<AuthResult> {
         return withContext(Dispatchers.IO) {
@@ -26,40 +27,49 @@ class AuthRepositoryImpl @Inject constructor(
                 val response = authApiService.login(request)
                 localDataSource.saveToken(response.data.accessToken)
                 Result.success(response.data.toDomain())
-
             } catch (e: HttpException) {
-                val errorBody = e.response()?.errorBody()?.string()
-                val errorMessage = try {
-                    JSONObject(errorBody!!).getString("message")
-                } catch (ex: Exception) {
-                    "Error en el servidor de autenticación"
-                }
-                Result.failure(Exception(errorMessage))
+                Result.failure(Exception(parseHttpError(e, "Error en el servidor de autenticación")))
             } catch (e: Exception) {
                 Result.failure(Exception("Error de conexión. Verifica tu internet."))
             }
         }
     }
 
-    override suspend fun register( username: String,email: String, password: String): Result<User> {
+    override suspend fun register(username: String, email: String, password: String): Result<User> {
         return withContext(Dispatchers.IO) {
             try {
-
-                val request = RegisterRequest( username= username, email = email, password = password)
+                val request = RegisterRequest(username = username, email = email, password = password)
                 val response = authApiService.register(request)
                 Result.success(response.data.toDomain())
-
             } catch (e: HttpException) {
-                val errorBody = e.response()?.errorBody()?.string()
-                val errorMessage = try {
-                    JSONObject(errorBody!!).getString("message")
-                } catch (ex: Exception) {
-                    "Error al intentar registrar el usuario"
-                }
-                Result.failure(Exception(errorMessage))
+                Result.failure(Exception(parseHttpError(e, "Error al intentar registrar el usuario")))
             } catch (e: Exception) {
                 Result.failure(Exception("Error de conexión. Verifica tu internet."))
             }
+        }
+    }
+
+    override suspend fun googleSignIn(idToken: String): Result<AuthResult> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val request = GoogleSignInRequest(idToken = idToken)
+                val response = authApiService.googleSignIn(request)
+                localDataSource.saveToken(response.data.accessToken)
+                Result.success(response.data.toDomain())
+            } catch (e: HttpException) {
+                Result.failure(Exception(parseHttpError(e, "Error al autenticar con Google")))
+            } catch (e: Exception) {
+                Result.failure(Exception("Error de conexión. Verifica tu internet."))
+            }
+        }
+    }
+
+    private fun parseHttpError(e: HttpException, fallback: String): String {
+        val errorBody = e.response()?.errorBody()?.string()
+        return try {
+            JSONObject(errorBody!!).getString("message")
+        } catch (ex: Exception) {
+            fallback
         }
     }
 }

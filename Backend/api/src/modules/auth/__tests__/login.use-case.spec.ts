@@ -49,7 +49,7 @@ describe('LoginUseCase', () => {
 
       const result = await useCase.execute(mockLoginDto());
 
-      expect(result).toEqual({ accessToken: 'mock.jwt.token' });
+      expect(result.accessToken).toBe('mock.jwt.token');
     });
 
     it('debe firmar el JWT con el payload correcto del usuario', async () => {
@@ -62,6 +62,7 @@ describe('LoginUseCase', () => {
         sub: MOCK_USER_ID,
         email: 'test@example.com',
         username: 'testuser',
+        role: 'PLAYER',
       });
     });
 
@@ -71,7 +72,10 @@ describe('LoginUseCase', () => {
 
       await useCase.execute(mockLoginDto());
 
-      expect(bcrypt.compare).toHaveBeenCalledWith('password123', MOCK_PASSWORD_HASH);
+      expect(bcrypt.compare).toHaveBeenCalledWith(
+        'password123',
+        MOCK_PASSWORD_HASH,
+      );
     });
 
     it('debe lanzar UnauthorizedException si el usuario no existe', async () => {

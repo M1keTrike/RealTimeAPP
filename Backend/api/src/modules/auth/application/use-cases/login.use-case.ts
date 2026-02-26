@@ -29,7 +29,11 @@ export class LoginUseCase {
     if (!user) {
       throw new UnauthorizedException('Credenciales inválidas.');
     }
-
+    if (!user.passwordHash) {
+      throw new UnauthorizedException(
+        'Esta cuenta usa inicio de sesi\u00f3n con Google. Usa /auth/google.',
+      );
+    }
     const passwordValid = await bcrypt.compare(dto.password, user.passwordHash);
     if (!passwordValid) {
       throw new UnauthorizedException('Credenciales inválidas.');

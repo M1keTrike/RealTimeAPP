@@ -1,4 +1,4 @@
-import { User, UserRole } from '../domain/entities/user.entity';
+import { User, UserRole, AuthProvider } from '../domain/entities/user.entity';
 import { UserOrmEntity } from '../infrastructure/persistence/user.orm-entity';
 
 export const MOCK_USER_ID = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
@@ -15,6 +15,7 @@ export const mockUser = (): User =>
     MOCK_PASSWORD_HASH,
     1200,
     MOCK_ROLE,
+    AuthProvider.LOCAL,
     MOCK_DATE,
   );
 
@@ -26,6 +27,7 @@ export const mockUserOrmEntity = (): UserOrmEntity => {
   orm.passwordHash = MOCK_PASSWORD_HASH;
   orm.eloRating = 1200;
   orm.role = MOCK_ROLE;
+  orm.authProvider = AuthProvider.LOCAL;
   orm.createdAt = MOCK_DATE;
   return orm;
 };

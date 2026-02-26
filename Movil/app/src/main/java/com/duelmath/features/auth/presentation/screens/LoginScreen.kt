@@ -9,6 +9,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -24,6 +25,7 @@ fun LoginScreen(
     onNavigateToRegister: () -> Unit,
     onLoginSuccess: () -> Unit
 ) {
+    val context = LocalContext.current
     val email by viewModel.email.collectAsStateWithLifecycle()
     val password by viewModel.password.collectAsStateWithLifecycle()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -60,7 +62,7 @@ fun LoginScreen(
             Spacer(modifier = Modifier.height(32.dp))
 
             AuthSocialLogins(
-                onGoogleClick = { /* TODO: Implementar Google Auth a futuro */ },
+                onGoogleClick = { viewModel.googleSignIn(context) },
             )
 
             Spacer(modifier = Modifier.height(24.dp))

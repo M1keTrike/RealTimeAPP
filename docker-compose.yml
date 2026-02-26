@@ -37,5 +37,22 @@ services:
     depends_on:
       - db-postgres # Espera a que la base de datos inicie primero
 
+  ws-go:
+    build:
+      context: ./WebSocket
+      dockerfile: Dockerfile
+    container_name: mathduel_ws
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - JWT_SECRET=tu_super_secreto_jwt_local
+      - NESTJS_API_URL=http://api-nest:3000
+      - GAME_ROUNDS=5
+      - ROUND_TIMEOUT_SECONDS=30
+    depends_on:
+      - api-nest
+
 volumes:
   pgdata:
