@@ -1,4 +1,8 @@
-import { User, UserRole } from '../../domain/entities/user.entity';
+import {
+  User,
+  UserRole,
+  AuthProvider,
+} from '../../domain/entities/user.entity';
 import { UserOrmEntity } from './user.orm-entity';
 
 export class UserMapper {
@@ -10,6 +14,7 @@ export class UserMapper {
       ormEntity.passwordHash,
       ormEntity.eloRating,
       ormEntity.role as UserRole,
+      ormEntity.authProvider as AuthProvider,
       ormEntity.createdAt,
     );
   }
@@ -22,6 +27,7 @@ export class UserMapper {
     ormEntity.passwordHash = domainEntity.passwordHash;
     ormEntity.eloRating = domainEntity.eloRating;
     ormEntity.role = domainEntity.role;
+    ormEntity.authProvider = domainEntity.authProvider;
     ormEntity.createdAt = domainEntity.createdAt;
     return ormEntity;
   }

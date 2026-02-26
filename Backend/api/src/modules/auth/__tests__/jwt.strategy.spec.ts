@@ -30,6 +30,7 @@ describe('JwtStrategy', () => {
         sub: MOCK_USER_ID,
         email: 'test@example.com',
         username: 'testuser',
+        role: 'PLAYER',
       };
 
       const result = await strategy.validate(payload);
@@ -38,6 +39,7 @@ describe('JwtStrategy', () => {
         userId: MOCK_USER_ID,
         email: 'test@example.com',
         username: 'testuser',
+        role: 'PLAYER',
       });
     });
 
@@ -46,6 +48,7 @@ describe('JwtStrategy', () => {
         sub: MOCK_USER_ID,
         email: 'otro@example.com',
         username: 'otrouser',
+        role: 'PLAYER',
       };
 
       const result = await strategy.validate(payload);
