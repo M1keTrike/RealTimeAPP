@@ -9,6 +9,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import retrofit2.HttpException
+import retrofit2.Response
 import javax.inject.Inject
 
 class MatchmakingRepositoryImpl @Inject constructor(
@@ -29,6 +30,26 @@ class MatchmakingRepositoryImpl @Inject constructor(
                 Result.failure(Exception(errorMessage))
             } catch (e: Exception) {
                 Result.failure(Exception("Error de conexión al servidor de emparejamiento."))
+            }
+        }
+    }
+    override suspend fun cancelMatch(sessionId: String): Result<Boolean> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val response = apiService.cancelMatch(sessionId)
+                if (response.isSuccessful) {
+                    Result.success(true)
+                } else {
+                    val errorBody = response.errorBody()?.string()
+                    val errorMessage = try {
+                        JSONObject(errorBody!!).getString("message")
+                    } catch (ex: Exception) {
+                        "Error HTTP: ${response.code()}"
+                    }
+                    Result.failure(Exception(errorMessage))
+                }
+            } catch (e: Exception) {
+                Result.failure(Exception("Error de conexión al cancelar."))
             }
         }
     }

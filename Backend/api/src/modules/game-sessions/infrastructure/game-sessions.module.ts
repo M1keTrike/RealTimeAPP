@@ -8,6 +8,7 @@ import { GAME_SESSION_REPOSITORY } from '../domain/repositories/game-session.rep
 import { GameSessionTypeOrmRepository } from './persistence/game-session.repository';
 import { GameSessionOrmEntity } from './persistence/game-session.orm-entity';
 import { RoundOrmEntity } from './persistence/round.orm-entity';
+import { CancelSessionUseCase } from '../application/use-cases/CancelSessionUseCase';
 
 @Module({
   imports: [TypeOrmModule.forFeature([GameSessionOrmEntity, RoundOrmEntity])],
@@ -16,6 +17,7 @@ import { RoundOrmEntity } from './persistence/round.orm-entity';
     JoinOrCreateSessionUseCase,
     CreateSessionUseCase,
     FinishSessionUseCase,
+    CancelSessionUseCase,
     {
       provide: GAME_SESSION_REPOSITORY,
       useClass: GameSessionTypeOrmRepository,

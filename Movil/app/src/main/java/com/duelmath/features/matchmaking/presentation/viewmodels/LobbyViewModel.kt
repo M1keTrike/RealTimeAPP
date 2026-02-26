@@ -3,6 +3,7 @@ package com.duelmath.features.matchmaking.presentation.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.duelmath.features.auth.data.datasources.local.AuthLocalDataSource
+import com.duelmath.features.matchmaking.domain.usecases.CancelMatchUseCase
 import com.duelmath.features.matchmaking.domain.usecases.FindMatchUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,6 +16,7 @@ import javax.inject.Inject
 @HiltViewModel
 class LobbyViewModel @Inject constructor(
     private val findMatchUseCase: FindMatchUseCase,
+    private val cancelMatchUseCase: CancelMatchUseCase,
     private val localDataSource: AuthLocalDataSource
 ) : ViewModel() {
 
@@ -35,6 +37,24 @@ class LobbyViewModel @Inject constructor(
                 _uiState.update { it.copy(isSearching = false, currentSession = session) }
             }.onFailure { error ->
                 _uiState.update { it.copy(isSearching = false, errorMessage = error.message) }
+            }
+        }
+    }
+
+    fun cancelMatchmaking() {
+        viewModelScope.launch {
+            val currentSessionId = _uiState.value.currentSession?.id
+            if (currentSessionId != null) {
+                val result = cancelMatchUseCase(currentSessionId)
+                result.onFailure { error ->
+                    _uiState.update { it.copy(errorMessage = error.message) }
+                }
+            }
+            _uiState.update {
+                it.copy(
+                    isSearching = false,
+                    currentSession = null
+                )
             }
         }
     }

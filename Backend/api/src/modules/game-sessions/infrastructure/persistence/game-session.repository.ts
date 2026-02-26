@@ -34,4 +34,7 @@ export class GameSessionTypeOrmRepository implements IGameSessionRepository {
     if (!ormEntity) return null;
     return GameSessionMapper.toDomain(ormEntity);
   }
+  async delete(id: string): Promise<void> {
+    await this.repository.delete(id);
+  }
 }
