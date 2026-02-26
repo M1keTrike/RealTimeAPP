@@ -3,6 +3,10 @@ package com.duelmath.features.matchmaking.data.datasources.remote.model
 data class MatchmakeRequest(
     val userId: String
 )
+data class MatchmakeCancel(
+    val userId: String,
+    val sessionId: String
+)
 
 data class GameSessionResponse(
     val id: String,

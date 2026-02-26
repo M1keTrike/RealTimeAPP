@@ -1,7 +1,9 @@
 package com.duelmath.features.matchmaking.presentation.screens
 
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -49,18 +51,30 @@ fun LobbyScreen(
 
             Spacer(modifier = Modifier.height(64.dp))
 
-            if (uiState.isSearching) {
-                CircularProgressIndicator(color = Color.White)
-                Spacer(modifier = Modifier.height(16.dp))
-                Text("Buscando oponente...", color = Color.LightGray, fontSize = 16.sp)
-            } else if (uiState.currentSession?.status == GameSessionStatus.WAITING) {
+            if (uiState.isSearching || uiState.currentSession?.status == GameSessionStatus.WAITING) {
                 CircularProgressIndicator(color = Color(0xFF2563EB))
                 Spacer(modifier = Modifier.height(16.dp))
-                Text("Sala creada. Esperando al jugador 2...", color = Color.LightGray, fontSize = 16.sp)
-            } else {
+
+                val text = if (uiState.isSearching) "Buscando oponente..." else "Sala creada. Esperando al jugador 2..."
+                Text(text, color = Color.LightGray, fontSize = 16.sp)
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                OutlinedButton(
+                    onClick = { viewModel.cancelMatchmaking() },
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFEF4444)), // Rojo Tailwind
+                    border = BorderStroke(1.dp, Color(0xFFEF4444).copy(alpha = 0.5f))
+                ) {
+                    Text("CANCELAR BÚSQUEDA", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+            else {
                 Button(
                     onClick = { viewModel.startMatchmaking() },
                     modifier = Modifier.fillMaxWidth().height(56.dp),
+                    shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB))
                 ) {
                     Text("BUSCAR PARTIDA", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
