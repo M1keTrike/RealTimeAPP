@@ -4,7 +4,6 @@ import com.duelmath.features.auth.data.datasources.remote.model.ApiResponse
 import com.duelmath.features.questions.data.datasources.remote.model.CreateQuestionRequest
 import com.duelmath.features.questions.data.datasources.remote.model.QuestionResponse
 import com.duelmath.features.questions.data.datasources.remote.model.UpdateQuestionRequest
-import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
@@ -26,5 +25,5 @@ interface QuestionsApiService {
     ): ApiResponse<QuestionResponse>
 
     @DELETE("questions/{id}")
-    suspend fun deleteQuestion(@Path("id") id: String): Response<Unit>
+    suspend fun deleteQuestion(@Path("id") id: String): ApiResponse<Map<String, Any>?>
 }

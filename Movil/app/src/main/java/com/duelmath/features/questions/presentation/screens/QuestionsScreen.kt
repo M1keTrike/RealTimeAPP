@@ -4,6 +4,7 @@ import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,7 +20,9 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -32,6 +35,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -47,6 +51,7 @@ import com.duelmath.core.ui.theme.TextGray
 import com.duelmath.features.questions.domain.entities.Question
 import com.duelmath.features.questions.domain.entities.QuestionDifficulty
 import com.duelmath.features.questions.presentation.viewmodels.QuestionsViewModel
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -56,6 +61,8 @@ fun QuestionsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var showEditor by remember { mutableStateOf(false) }
 
     LaunchedEffect(uiState.errorMessage) {
         uiState.errorMessage?.let {
@@ -68,6 +75,7 @@ fun QuestionsScreen(
         uiState.successMessage?.let {
             Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
             viewModel.clearMessages()
+            showEditor = false
         }
     }
 
@@ -85,6 +93,20 @@ fun QuestionsScreen(
                     containerColor = DarkBackground,
                 ),
             )
+        },
+        floatingActionButton = {
+            if (uiState.isAdmin) {
+                FloatingActionButton(
+                    onClick = {
+                        viewModel.clearForm()
+                        showEditor = true
+                    },
+                    containerColor = Color(0xFF2563EB),
+                    contentColor = Color.White,
+                ) {
+                    Text("+")
+                }
+            }
         },
     ) { innerPadding ->
         if (!uiState.isAdmin) {
@@ -108,36 +130,124 @@ fun QuestionsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(16.dp),
+                .padding(horizontal = 16.dp),
+            contentPadding = PaddingValues(vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item {
                 Text(
-                    text = if (uiState.editingQuestionId == null) "Crear pregunta" else "Editar pregunta",
-                    style = MaterialTheme.typography.titleLarge,
+                    text = "Catálogo de preguntas (${uiState.questions.size})",
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = Color.White,
                 )
+            }
 
-                Spacer(modifier = Modifier.height(8.dp))
+            items(uiState.questions, key = { it.id }) { question ->
+                QuestionItem(
+                    question = question,
+                    onEdit = {
+                        viewModel.startEditing(question)
+                        showEditor = true
+                    },
+                    onDelete = {
+                        scope.launch {
+                            viewModel.deleteQuestion(question.id)
+                        }
+                    },
+                    isLoading = uiState.isLoading,
+                )
+            }
+        }
 
+        if (showEditor) {
+            QuestionEditorSheet(
+                isEditing = uiState.editingQuestionId != null,
+                statement = uiState.statementInput,
+                difficulty = uiState.difficultyInput,
+                optionA = uiState.optionAInput,
+                optionB = uiState.optionBInput,
+                optionC = uiState.optionCInput,
+                optionD = uiState.optionDInput,
+                correctOptionIndex = uiState.correctOptionIndexInput,
+                isLoading = uiState.isLoading,
+                onStatementChange = viewModel::onStatementChange,
+                onDifficultyChange = viewModel::onDifficultyChange,
+                onOptionAChange = viewModel::onOptionAChange,
+                onOptionBChange = viewModel::onOptionBChange,
+                onOptionCChange = viewModel::onOptionCChange,
+                onOptionDChange = viewModel::onOptionDChange,
+                onCorrectOptionIndexChange = viewModel::onCorrectOptionIndexChange,
+                onSave = viewModel::saveQuestion,
+                onClear = viewModel::clearForm,
+                onDismiss = { showEditor = false },
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun QuestionEditorSheet(
+    isEditing: Boolean,
+    statement: String,
+    difficulty: QuestionDifficulty,
+    optionA: String,
+    optionB: String,
+    optionC: String,
+    optionD: String,
+    correctOptionIndex: String,
+    isLoading: Boolean,
+    onStatementChange: (String) -> Unit,
+    onDifficultyChange: (QuestionDifficulty) -> Unit,
+    onOptionAChange: (String) -> Unit,
+    onOptionBChange: (String) -> Unit,
+    onOptionCChange: (String) -> Unit,
+    onOptionDChange: (String) -> Unit,
+    onCorrectOptionIndexChange: (String) -> Unit,
+    onSave: () -> Unit,
+    onClear: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = DarkBackground,
+    ) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            contentPadding = PaddingValues(bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            item {
+                Text(
+                    text = if (isEditing) "Editar pregunta" else "Crear pregunta",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+
+            item {
                 OutlinedTextField(
-                    value = uiState.statementInput,
-                    onValueChange = viewModel::onStatementChange,
+                    value = statement,
+                    onValueChange = onStatementChange,
                     label = { Text("Enunciado") },
                     modifier = Modifier.fillMaxWidth(),
                     colors = fieldColors(),
                 )
+            }
 
-                Spacer(modifier = Modifier.height(8.dp))
-
-                var expanded by remember { mutableStateOf(false) }
+            item {
                 ExposedDropdownMenuBox(
                     expanded = expanded,
                     onExpandedChange = { expanded = !expanded },
                 ) {
                     OutlinedTextField(
-                        value = uiState.difficultyInput.name,
+                        value = difficulty.name,
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Dificultad") },
@@ -151,103 +261,86 @@ fun QuestionsScreen(
                         expanded = expanded,
                         onDismissRequest = { expanded = false },
                     ) {
-                        QuestionDifficulty.entries.forEach { difficulty ->
+                        QuestionDifficulty.entries.forEach { entry ->
                             DropdownMenuItem(
-                                text = { Text(difficulty.name) },
+                                text = { Text(entry.name) },
                                 onClick = {
-                                    viewModel.onDifficultyChange(difficulty)
+                                    onDifficultyChange(entry)
                                     expanded = false
                                 },
                             )
                         }
                     }
                 }
+            }
 
-                Spacer(modifier = Modifier.height(8.dp))
-
+            item {
                 OutlinedTextField(
-                    value = uiState.optionAInput,
-                    onValueChange = viewModel::onOptionAChange,
+                    value = optionA,
+                    onValueChange = onOptionAChange,
                     label = { Text("Opción 0") },
                     modifier = Modifier.fillMaxWidth(),
                     colors = fieldColors(),
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+            }
+            item {
                 OutlinedTextField(
-                    value = uiState.optionBInput,
-                    onValueChange = viewModel::onOptionBChange,
+                    value = optionB,
+                    onValueChange = onOptionBChange,
                     label = { Text("Opción 1") },
                     modifier = Modifier.fillMaxWidth(),
                     colors = fieldColors(),
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+            }
+            item {
                 OutlinedTextField(
-                    value = uiState.optionCInput,
-                    onValueChange = viewModel::onOptionCChange,
+                    value = optionC,
+                    onValueChange = onOptionCChange,
                     label = { Text("Opción 2") },
                     modifier = Modifier.fillMaxWidth(),
                     colors = fieldColors(),
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+            }
+            item {
                 OutlinedTextField(
-                    value = uiState.optionDInput,
-                    onValueChange = viewModel::onOptionDChange,
+                    value = optionD,
+                    onValueChange = onOptionDChange,
                     label = { Text("Opción 3") },
                     modifier = Modifier.fillMaxWidth(),
                     colors = fieldColors(),
                 )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
+            }
+            item {
                 OutlinedTextField(
-                    value = uiState.correctOptionIndexInput,
-                    onValueChange = viewModel::onCorrectOptionIndexChange,
+                    value = correctOptionIndex,
+                    onValueChange = onCorrectOptionIndexChange,
                     label = { Text("Índice correcto (0 a n)") },
                     modifier = Modifier.fillMaxWidth(),
                     colors = fieldColors(),
                 )
+            }
 
-                Spacer(modifier = Modifier.height(12.dp))
-
+            item {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(
-                        onClick = viewModel::saveQuestion,
-                        enabled = !uiState.isLoading,
+                        onClick = onSave,
+                        enabled = !isLoading,
                         colors = androidx.compose.material3.ButtonDefaults.buttonColors(
                             containerColor = Color(0xFF2563EB),
                             contentColor = Color.White,
                         ),
                     ) {
-                        Text(if (uiState.editingQuestionId == null) "Crear" else "Actualizar")
+                        Text(if (isEditing) "Actualizar" else "Crear")
                     }
 
                     OutlinedButton(
-                        onClick = viewModel::clearForm,
-                        enabled = !uiState.isLoading,
+                        onClick = onClear,
+                        enabled = !isLoading,
                         border = BorderStroke(1.dp, BorderWhite),
                     ) {
                         Text("Limpiar", color = TextGray)
                     }
                 }
-            }
-
-            item {
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "Catálogo de preguntas",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White,
-                )
-            }
-
-            items(uiState.questions, key = { it.id }) { question ->
-                QuestionItem(
-                    question = question,
-                    onEdit = { viewModel.startEditing(question) },
-                    onDelete = { viewModel.deleteQuestion(question.id) },
-                    isLoading = uiState.isLoading,
-                )
             }
         }
     }

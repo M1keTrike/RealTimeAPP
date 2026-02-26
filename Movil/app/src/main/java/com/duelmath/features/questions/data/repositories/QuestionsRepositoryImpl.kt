@@ -63,6 +63,9 @@ class QuestionsRepositoryImpl @Inject constructor(
     ): Result<Question> {
         return withContext(Dispatchers.IO) {
             try {
+                if (id.isBlank()) {
+                    return@withContext Result.failure(Exception("ID de pregunta inválido"))
+                }
                 val request = UpdateQuestionRequest(
                     statement = statement,
                     difficulty = difficulty,
@@ -82,18 +85,18 @@ class QuestionsRepositoryImpl @Inject constructor(
     override suspend fun deleteQuestion(id: String): Result<Boolean> {
         return withContext(Dispatchers.IO) {
             try {
+                if (id.isBlank()) {
+                    return@withContext Result.failure(Exception("ID de pregunta inválido"))
+                }
                 val response = apiService.deleteQuestion(id)
-                if (response.isSuccessful) {
+                if (response.success) {
                     Result.success(true)
                 } else {
-                    val errorBody = response.errorBody()?.string()
-                    val errorMessage = try {
-                        JSONObject(errorBody!!).getString("message")
-                    } catch (ex: Exception) {
-                        "Error HTTP: ${response.code()}"
-                    }
+                    val errorMessage = response.message ?: "No se pudo eliminar la pregunta"
                     Result.failure(Exception(errorMessage))
                 }
+            } catch (e: HttpException) {
+                Result.failure(Exception(parseHttpError(e, "Error al eliminar pregunta")))
             } catch (e: Exception) {
                 Result.failure(Exception("Error de conexión al eliminar pregunta"))
             }
@@ -103,7 +106,11 @@ class QuestionsRepositoryImpl @Inject constructor(
     private fun parseHttpError(e: HttpException, fallback: String): String {
         val errorBody = e.response()?.errorBody()?.string()
         return try {
-            JSONObject(errorBody!!).getString("message")
+            val parsed = JSONObject(errorBody!!).opt("message")
+            when (parsed) {
+                is String -> parsed
+                else -> fallback
+            }
         } catch (ex: Exception) {
             fallback
         }
