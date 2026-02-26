@@ -7,3 +7,5 @@ import kotlinx.serialization.Serializable
 
 @Serializable data object LobbyRoute
 @Serializable data object ProfileRoute
+
+@Serializable data class GameRoute(val sessionId: String)

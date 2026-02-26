@@ -4,6 +4,7 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import com.duelmath.core.navigation.FeatureNavGraph
+import com.duelmath.core.navigation.GameRoute
 import com.duelmath.core.navigation.LobbyRoute
 import com.duelmath.features.matchmaking.presentation.screens.LobbyScreen
 import javax.inject.Inject
@@ -15,8 +16,7 @@ class MatchmakingNavGraph @Inject constructor() : FeatureNavGraph {
         navGraphBuilder.composable<LobbyRoute> {
             LobbyScreen(
                 onMatchFound = { sessionId ->
-                    // TODO: Navegar a la pantalla del Duelo (ej: GameRoute(sessionId))
-                    // navController.navigate(GameRoute(sessionId))
+                    navController.navigate(GameRoute(sessionId))
                 }
             )
         }
