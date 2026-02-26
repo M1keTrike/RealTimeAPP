@@ -38,9 +38,6 @@ fun DuelMathNavigationWrapper(navGraphs: Set<FeatureNavGraph>) {
                 graph.registerGraph(this, navController)
             }
 
-            composable<LobbyRoute> {
-                Text("Bienvenido al Lobby del Juego", modifier = Modifier.fillMaxSize())
-            }
         }
     }
 }

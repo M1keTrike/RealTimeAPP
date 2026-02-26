@@ -12,12 +12,12 @@ class AuthLocalDataSourceImpl @Inject constructor(
 
     private object PreferencesKeys {
         val JWT_TOKEN = stringPreferencesKey("jwt_token")
+        val USER_ID = stringPreferencesKey("user_id")
+        val USERNAME = stringPreferencesKey("username")
     }
 
     override suspend fun saveToken(token: String) {
-        dataStore.edit { preferences ->
-            preferences[PreferencesKeys.JWT_TOKEN] = token
-        }
+        dataStore.edit { preferences -> preferences[PreferencesKeys.JWT_TOKEN] = token }
     }
 
     override suspend fun getToken(): String? {
@@ -25,9 +25,29 @@ class AuthLocalDataSourceImpl @Inject constructor(
         return preferences[PreferencesKeys.JWT_TOKEN]
     }
 
+    override suspend fun saveUserId(userId: String) {
+        dataStore.edit { preferences -> preferences[PreferencesKeys.USER_ID] = userId }
+    }
+
+    override suspend fun getUserId(): String? {
+        val preferences = dataStore.data.first()
+        return preferences[PreferencesKeys.USER_ID]
+    }
+
+    override suspend fun saveUsername(username: String) {
+        dataStore.edit { preferences -> preferences[PreferencesKeys.USERNAME] = username }
+    }
+
+    override suspend fun getUsername(): String? {
+        val preferences = dataStore.data.first()
+        return preferences[PreferencesKeys.USERNAME]
+    }
+
     override suspend fun clearSession() {
         dataStore.edit { preferences ->
             preferences.remove(PreferencesKeys.JWT_TOKEN)
+            preferences.remove(PreferencesKeys.USER_ID)
+            preferences.remove(PreferencesKeys.USERNAME)
         }
     }
 }

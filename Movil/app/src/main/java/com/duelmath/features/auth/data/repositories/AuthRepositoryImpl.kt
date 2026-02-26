@@ -24,7 +24,10 @@ class AuthRepositoryImpl @Inject constructor(
             try {
                 val request = LoginRequest(email = email, password = password)
                 val response = authApiService.login(request)
+                val domainData = response.data.toDomain()
                 localDataSource.saveToken(response.data.accessToken)
+                localDataSource.saveUserId(domainData.user.id)
+                localDataSource.saveUsername(domainData.user.username)
                 Result.success(response.data.toDomain())
 
             } catch (e: HttpException) {
