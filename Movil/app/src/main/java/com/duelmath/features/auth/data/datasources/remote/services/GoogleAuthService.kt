@@ -5,7 +5,7 @@ import androidx.credentials.ClearCredentialStateRequest
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
-import com.duelmath.R
+import com.duelmath.core.config.AppConfig
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.firebase.auth.FirebaseAuth
@@ -25,11 +25,9 @@ class GoogleAuthService @Inject constructor(
      * @return idToken de Google/Firebase para autenticarse en el backend.
      */
     suspend fun getIdToken(context: Context): String {
-        val webClientId = context.getString(R.string.default_web_client_id)
-
         val googleIdOption = GetGoogleIdOption.Builder()
             .setFilterByAuthorizedAccounts(false)
-            .setServerClientId(webClientId)
+            .setServerClientId(AppConfig.auth.googleWebClientId.value)
             .setAutoSelectEnabled(false)
             .build()
 
