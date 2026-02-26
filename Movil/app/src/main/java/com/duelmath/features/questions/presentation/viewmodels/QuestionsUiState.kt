@@ -6,6 +6,7 @@ import com.duelmath.features.questions.domain.entities.QuestionDifficulty
 data class QuestionsUiState(
     val isLoading: Boolean = false,
     val isAdmin: Boolean = false,
+    val showEditor: Boolean = false,
     val errorMessage: String? = null,
     val successMessage: String? = null,
     val questions: List<Question> = emptyList(),

@@ -35,7 +35,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -51,7 +50,6 @@ import com.duelmath.core.ui.theme.TextGray
 import com.duelmath.features.questions.domain.entities.Question
 import com.duelmath.features.questions.domain.entities.QuestionDifficulty
 import com.duelmath.features.questions.presentation.viewmodels.QuestionsViewModel
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,8 +59,6 @@ fun QuestionsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    var showEditor by remember { mutableStateOf(false) }
 
     LaunchedEffect(uiState.errorMessage) {
         uiState.errorMessage?.let {
@@ -75,7 +71,6 @@ fun QuestionsScreen(
         uiState.successMessage?.let {
             Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
             viewModel.clearMessages()
-            showEditor = false
         }
     }
 
@@ -98,8 +93,7 @@ fun QuestionsScreen(
             if (uiState.isAdmin) {
                 FloatingActionButton(
                     onClick = {
-                        viewModel.clearForm()
-                        showEditor = true
+                        viewModel.openCreateEditor()
                     },
                     containerColor = Color(0xFF2563EB),
                     contentColor = Color.White,
@@ -146,21 +140,14 @@ fun QuestionsScreen(
             items(uiState.questions, key = { it.id }) { question ->
                 QuestionItem(
                     question = question,
-                    onEdit = {
-                        viewModel.startEditing(question)
-                        showEditor = true
-                    },
-                    onDelete = {
-                        scope.launch {
-                            viewModel.deleteQuestion(question.id)
-                        }
-                    },
+                    onEdit = { viewModel.startEditing(question) },
+                    onDelete = { viewModel.deleteQuestion(question.id) },
                     isLoading = uiState.isLoading,
                 )
             }
         }
 
-        if (showEditor) {
+        if (uiState.showEditor) {
             QuestionEditorSheet(
                 isEditing = uiState.editingQuestionId != null,
                 statement = uiState.statementInput,
@@ -180,7 +167,7 @@ fun QuestionsScreen(
                 onCorrectOptionIndexChange = viewModel::onCorrectOptionIndexChange,
                 onSave = viewModel::saveQuestion,
                 onClear = viewModel::clearForm,
-                onDismiss = { showEditor = false },
+                onDismiss = viewModel::closeEditor,
             )
         }
     }

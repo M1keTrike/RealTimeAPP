@@ -74,9 +74,11 @@ fun RegisterScreen(
             email = email,
             password = password,
             isLoading = uiState.isLoading,
+            isPasswordVisible = uiState.isRegisterPasswordVisible,
             onUsernameChange = { viewModel.username.value = it },
             onEmailChange = { viewModel.email.value = it },
             onPasswordChange = { viewModel.password.value = it },
+            onPasswordVisibilityChange = viewModel::setRegisterPasswordVisible,
             onRegisterClick = { viewModel.register() },
             onGoogleClick = { viewModel.googleSignIn(context) }
         )
@@ -91,9 +93,11 @@ private fun RegisterContent(
     email: String,
     password: String,
     isLoading: Boolean,
+    isPasswordVisible: Boolean,
     onUsernameChange: (String) -> Unit,
     onEmailChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
+    onPasswordVisibilityChange: (Boolean) -> Unit,
     onRegisterClick: () -> Unit,
     onGoogleClick: () -> Unit
 ) {
@@ -134,7 +138,9 @@ private fun RegisterContent(
             onValueChange = onPasswordChange,
             label = "Password",
             placeholder = "At least 6 characters",
-            isPassword = true
+            isPassword = true,
+            passwordVisible = isPasswordVisible,
+            onPasswordVisibilityChange = onPasswordVisibilityChange,
         )
 
         Spacer(modifier = Modifier.height(32.dp))
@@ -157,9 +163,11 @@ fun RegisterContentPreview() {
             email = "",
             password = "",
             isLoading = false,
+            isPasswordVisible = false,
             onUsernameChange = {},
             onEmailChange = {},
             onPasswordChange = {},
+            onPasswordVisibilityChange = {},
             onRegisterClick = {},
             onGoogleClick = {}
         )

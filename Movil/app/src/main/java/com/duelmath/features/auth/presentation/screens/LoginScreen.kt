@@ -55,8 +55,10 @@ fun LoginScreen(
             email = email,
             password = password,
             isLoading = uiState.isLoading,
+            isPasswordVisible = uiState.isLoginPasswordVisible,
             onEmailChange = { viewModel.email.value = it },
             onPasswordChange = { viewModel.password.value = it },
+            onPasswordVisibilityChange = viewModel::setLoginPasswordVisible,
             onLoginClick = { viewModel.login() },
             onGoogleClick = { viewModel.googleSignIn(context) },
             onNavigateToRegister = onNavigateToRegister
@@ -71,8 +73,10 @@ private fun LoginContent(
     email: String,
     password: String,
     isLoading: Boolean,
+    isPasswordVisible: Boolean,
     onEmailChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
+    onPasswordVisibilityChange: (Boolean) -> Unit,
     onLoginClick: () -> Unit,
     onGoogleClick: () -> Unit,
     onNavigateToRegister: () -> Unit
@@ -108,7 +112,9 @@ private fun LoginContent(
             onValueChange = onPasswordChange,
             label = "Password",
             placeholder = "Enter your password",
-            isPassword = true
+            isPassword = true,
+            passwordVisible = isPasswordVisible,
+            onPasswordVisibilityChange = onPasswordVisibilityChange,
         )
 
         Spacer(modifier = Modifier.height(32.dp))
@@ -143,8 +149,10 @@ fun LoginContentPreview() {
             email = "",
             password = "",
             isLoading = false,
+            isPasswordVisible = false,
             onEmailChange = {},
             onPasswordChange = {},
+            onPasswordVisibilityChange = {},
             onLoginClick = {},
             onGoogleClick = {},
             onNavigateToRegister = {}

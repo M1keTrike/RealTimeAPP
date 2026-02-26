@@ -96,6 +96,7 @@ class QuestionsViewModel @Inject constructor(
 
         _uiState.update {
             it.copy(
+                showEditor = true,
                 editingQuestionId = question.id,
                 statementInput = question.statement,
                 difficultyInput = question.difficulty,
@@ -108,6 +109,28 @@ class QuestionsViewModel @Inject constructor(
                 successMessage = null,
             )
         }
+    }
+
+    fun openCreateEditor() {
+        _uiState.update {
+            it.copy(
+                showEditor = true,
+                editingQuestionId = null,
+                statementInput = "",
+                difficultyInput = QuestionDifficulty.MEDIUM,
+                optionAInput = "",
+                optionBInput = "",
+                optionCInput = "",
+                optionDInput = "",
+                correctOptionIndexInput = "0",
+                errorMessage = null,
+                successMessage = null,
+            )
+        }
+    }
+
+    fun closeEditor() {
+        _uiState.update { it.copy(showEditor = false) }
     }
 
     fun clearForm() {
@@ -181,6 +204,7 @@ class QuestionsViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         isLoading = false,
+                        showEditor = false,
                         successMessage = if (current.editingQuestionId == null) {
                             "Pregunta creada correctamente"
                         } else {
