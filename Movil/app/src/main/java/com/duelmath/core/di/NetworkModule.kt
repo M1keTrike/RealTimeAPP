@@ -27,7 +27,7 @@ object NetworkModule {
     @ApiRetrofit
     fun provideApiRetrofit(okHttpClient: OkHttpClient): Retrofit {
         return Retrofit.Builder()
-            .baseUrl("http://192.168.56.1:3000/")
+            .baseUrl("http://10.14.0.94:3000/")
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
