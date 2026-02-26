@@ -58,6 +58,8 @@ class AuthRepositoryImpl @Inject constructor(
                 val request = GoogleSignInRequest(idToken = idToken)
                 val response = authApiService.googleSignIn(request)
                 localDataSource.saveToken(response.data.accessToken)
+                localDataSource.saveUserId(response.data.id)
+                localDataSource.saveUsername(response.data.username)
                 Result.success(response.data.toDomain())
             } catch (e: HttpException) {
                 Result.failure(Exception(parseHttpError(e, "Error al autenticar con Google")))
