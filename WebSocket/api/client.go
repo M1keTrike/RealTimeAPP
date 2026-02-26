@@ -86,10 +86,24 @@ func (c *Client) do(method, path string, body interface{}, out interface{}) erro
 	return nil
 }
 
-// GetRandomQuestion fetches a random question for the given difficulty.
-// It calls GET /questions (admin endpoint) which includes correctOptionId,
-// filters by difficulty, and returns a random one.
+// GetRandomQuestion returns a random playable question from all difficulties.
 func (c *Client) GetRandomQuestion(difficulty string) (*NestQuestion, error) {
+	_ = difficulty
+	pool, err := c.GetPlayableQuestions()
+	if err != nil {
+		return nil, err
+	}
+	if len(pool) == 0 {
+		return nil, fmt.Errorf("no playable questions available")
+	}
+
+	q := pool[rand.IntN(len(pool))]
+	return &q, nil
+}
+
+// GetPlayableQuestions fetches all questions across all difficulties and keeps
+// only those with a non-empty correctOptionId.
+func (c *Client) GetPlayableQuestions() ([]NestQuestion, error) {
 	var resp struct {
 		Success bool           `json:"success"`
 		Data    []NestQuestion `json:"data"`
@@ -98,18 +112,14 @@ func (c *Client) GetRandomQuestion(difficulty string) (*NestQuestion, error) {
 		return nil, fmt.Errorf("get questions: %w", err)
 	}
 
-	var pool []NestQuestion
+	pool := make([]NestQuestion, 0, len(resp.Data))
 	for _, q := range resp.Data {
-		if q.Difficulty == difficulty && q.CorrectOptionID != "" {
+		if q.CorrectOptionID != "" {
 			pool = append(pool, q)
 		}
 	}
-	if len(pool) == 0 {
-		return nil, fmt.Errorf("no questions available for difficulty %q", difficulty)
-	}
 
-	q := pool[rand.IntN(len(pool))]
-	return &q, nil
+	return pool, nil
 }
 
 // CreateGameSession creates a new session in NestJS with both players already matched.
@@ -128,8 +138,11 @@ func (c *Client) CreateGameSession(user1ID, user2ID string) (*NestGameSession, e
 
 // FinishGameSession marks a session as FINISHED and records the winner.
 // Calls PATCH /game-sessions/:id/finish (ADMIN).
-func (c *Client) FinishGameSession(sessionID, winnerID string) error {
-	body := map[string]string{"winnerId": winnerID}
+func (c *Client) FinishGameSession(sessionID string, winnerID *string) error {
+	body := map[string]string{}
+	if winnerID != nil && *winnerID != "" {
+		body["winnerId"] = *winnerID
+	}
 	path := fmt.Sprintf("/game-sessions/%s/finish", sessionID)
 	return c.do("PATCH", path, body, nil)
 }
