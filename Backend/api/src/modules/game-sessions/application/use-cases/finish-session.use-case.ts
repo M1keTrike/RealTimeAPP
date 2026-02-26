@@ -9,12 +9,12 @@ export class FinishSessionUseCase {
     private readonly gameSessionRepo: IGameSessionRepository,
   ) {}
 
-  async execute(sessionId: string, winnerId: string): Promise<void> {
+  async execute(sessionId: string, winnerId?: string): Promise<void> {
     const session = await this.gameSessionRepo.findById(sessionId);
     if (!session) {
       throw new NotFoundException(`Sesión con ID ${sessionId} no encontrada`);
     }
-    session.finishGame(winnerId);
+    session.finishGame(winnerId ?? null);
     await this.gameSessionRepo.save(session);
   }
 }

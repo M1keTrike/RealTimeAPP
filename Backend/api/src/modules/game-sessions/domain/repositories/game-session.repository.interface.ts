@@ -6,5 +6,6 @@ export interface IGameSessionRepository {
   save(session: GameSession): Promise<void>;
   findById(id: string): Promise<GameSession | null>;
   findAvailableSession(): Promise<GameSession | null>;
+  findInProgressByPlayers(userAId: string, userBId: string): Promise<GameSession | null>;
   delete(id: string): Promise<void>;
 }

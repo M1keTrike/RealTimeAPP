@@ -26,7 +26,7 @@ export class GameSession {
     this.status = GameSessionStatus.IN_PROGRESS;
   }
 
-  finishGame(winnerId: string): void {
+  finishGame(winnerId: string | null): void {
     this.winnerId = winnerId;
     this.status = GameSessionStatus.FINISHED;
   }

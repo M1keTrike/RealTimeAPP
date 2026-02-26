@@ -85,7 +85,7 @@ type RoundResultPayload struct {
 
 type GameOverPayload struct {
 	WinnerID string         `json:"winner_id"`
-	Reason   string         `json:"reason"` // "rounds_completed" | "opponent_disconnected"
+	Reason   string         `json:"reason"` // "rounds_completed" | "draw" | "opponent_disconnected"
 	Scores   map[string]int `json:"scores"`
 }
 

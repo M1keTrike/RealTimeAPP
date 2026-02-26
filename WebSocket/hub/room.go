@@ -5,6 +5,7 @@ package hub
 
 import (
 	"log"
+	"math/rand/v2"
 	"sync"
 	"time"
 
@@ -46,6 +47,8 @@ type Room struct {
 	p1Answered  bool
 	p2Answered  bool
 	scores      map[string]int
+	allQuestions []api.NestQuestion
+	questionPool []api.NestQuestion
 }
 
 func newRoom(id string, p1, p2 *Client, cfg *RoomConfig, apiClient *api.Client) *Room {
@@ -86,6 +89,24 @@ func (r *Room) run() {
 	r.sessionID = session.ID
 	r.mu.Unlock()
 
+	pool, err := r.apiClient.GetPlayableQuestions()
+	if err != nil {
+		log.Printf("[room %s] get questions pool error: %v", r.ID, err)
+		r.broadcastError("QUESTION_UNAVAILABLE", "No se pudieron cargar preguntas.")
+		return
+	}
+
+	if len(pool) == 0 {
+		log.Printf("[room %s] no playable questions found", r.ID)
+		r.broadcastError("QUESTION_UNAVAILABLE", "No hay preguntas disponibles para iniciar la partida.")
+		return
+	}
+
+	r.mu.Lock()
+	r.allQuestions = append([]api.NestQuestion(nil), pool...)
+	r.questionPool = append([]api.NestQuestion(nil), pool...)
+	r.mu.Unlock()
+
 	// 2. Notify both players — game is on.
 	r.notifyGameStarted()
 
@@ -98,10 +119,18 @@ func (r *Room) run() {
 
 	// 4. Determine winner and broadcast final result.
 	winnerID := r.determineWinner()
-	r.broadcastGameOver(winnerID, "rounds_completed")
+	reason := "rounds_completed"
+	if winnerID == "" {
+		reason = "draw"
+	}
+	r.broadcastGameOver(winnerID, reason)
 
 	// 5. Persist the result.
-	if err := r.apiClient.FinishGameSession(r.sessionID, winnerID); err != nil {
+	var winnerPtr *string
+	if winnerID != "" {
+		winnerPtr = &winnerID
+	}
+	if err := r.apiClient.FinishGameSession(r.sessionID, winnerPtr); err != nil {
 		log.Printf("[room %s] finish session error: %v", r.ID, err)
 	}
 }
@@ -120,11 +149,10 @@ func (r *Room) playRound(roundNum int) (aborted bool) {
 		<-r.answers
 	}
 
-	// Fetch a new question from NestJS (correct answer kept server-side).
-	question, err := r.apiClient.GetRandomQuestion(r.cfg.Difficulty)
-	if err != nil {
-		log.Printf("[room %s] get question error: %v", r.ID, err)
-		r.broadcastError("QUESTION_UNAVAILABLE", "No hay preguntas disponibles.")
+	question, ok := r.takeUniqueQuestion()
+	if !ok {
+		log.Printf("[room %s] no unique questions left for round %d", r.ID, roundNum)
+		r.broadcastError("QUESTION_UNAVAILABLE", "No hay preguntas suficientes para continuar.")
 		return true
 	}
 
@@ -192,6 +220,25 @@ collect:
 	return false
 }
 
+func (r *Room) takeUniqueQuestion() (*api.NestQuestion, bool) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if len(r.questionPool) == 0 {
+		if len(r.allQuestions) == 0 {
+			return nil, false
+		}
+		r.questionPool = append([]api.NestQuestion(nil), r.allQuestions...)
+	}
+
+	idx := rand.IntN(len(r.questionPool))
+	q := r.questionPool[idx]
+	r.questionPool[idx] = r.questionPool[len(r.questionPool)-1]
+	r.questionPool = r.questionPool[:len(r.questionPool)-1]
+
+	return &q, true
+}
+
 // HandleAnswer is called from a player's ReadPump goroutine.
 func (r *Room) HandleAnswer(c *Client, p AnswerPayload) {
 	r.mu.Lock()
@@ -254,7 +301,8 @@ func (r *Room) PlayerDisconnected(disconnected *Client) {
 
 		// Persist the result if the session was already created.
 		if sid != "" {
-			if err := r.apiClient.FinishGameSession(sid, winner.UserID); err != nil {
+			winnerID := winner.UserID
+			if err := r.apiClient.FinishGameSession(sid, &winnerID); err != nil {
 				log.Printf("[room %s] finish session (disconnect) error: %v", r.ID, err)
 			}
 		}
@@ -266,7 +314,10 @@ func (r *Room) PlayerDisconnected(disconnected *Client) {
 func (r *Room) determineWinner() string {
 	p1 := r.scores[r.Player1.UserID]
 	p2 := r.scores[r.Player2.UserID]
-	if p1 >= p2 {
+	if p1 == p2 {
+		return ""
+	}
+	if p1 > p2 {
 		return r.Player1.UserID
 	}
 	return r.Player2.UserID

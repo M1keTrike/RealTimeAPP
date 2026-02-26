@@ -138,7 +138,7 @@ func (h *Hub) matchmake(c *Client) {
 	cfg := &RoomConfig{
 		TotalRounds:  h.cfg.GameRounds,
 		RoundTimeout: h.cfg.RoundTimeout(),
-		Difficulty:   "MEDIUM",
+		Difficulty:   "ALL",
 	}
 	room := newRoom(roomID, opponent, c, cfg, h.apiClient)
 	h.rooms[roomID] = room

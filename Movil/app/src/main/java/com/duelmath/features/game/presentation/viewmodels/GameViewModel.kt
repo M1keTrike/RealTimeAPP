@@ -138,9 +138,11 @@ class GameViewModel @Inject constructor(
                         isShowingResult = true
                     )
                 }
-                _sideEffect.emit(
-                    if (result.winnerId == myId) GameSideEffect.RoundWon else GameSideEffect.RoundLost
-                )
+                if (result.winnerId == myId) {
+                    _sideEffect.emit(GameSideEffect.RoundWon)
+                } else if (result.winnerId != null) {
+                    _sideEffect.emit(GameSideEffect.RoundLost)
+                }
             }
             is GameEvent.GameOver -> {
                 countdownJob?.cancel()
@@ -152,13 +154,31 @@ class GameViewModel @Inject constructor(
                         gameOverReason = event.reason
                     )
                 }
-                _sideEffect.emit(if (iWon) GameSideEffect.GameWon else GameSideEffect.GameLost)
+                if (iWon) {
+                    _sideEffect.emit(GameSideEffect.GameWon)
+                } else if (event.winnerId != null) {
+                    _sideEffect.emit(GameSideEffect.GameLost)
+                }
             }
             is GameEvent.Error -> {
+                _uiState.update {
+                    it.copy(
+                        isConnecting = false,
+                        isWaiting = false,
+                        isConnected = false
+                    )
+                }
                 _sideEffect.emit(GameSideEffect.Error(event.message))
             }
             is GameEvent.Disconnected -> {
-                _uiState.update { it.copy(isConnected = false) }
+                _uiState.update {
+                    it.copy(
+                        isConnecting = false,
+                        isWaiting = false,
+                        isConnected = false
+                    )
+                }
+                _sideEffect.emit(GameSideEffect.Error("Conexión con el servidor perdida."))
             }
         }
     }
