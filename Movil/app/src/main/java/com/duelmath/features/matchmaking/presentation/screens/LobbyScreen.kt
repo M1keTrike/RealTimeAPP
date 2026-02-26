@@ -24,7 +24,8 @@ import com.duelmath.features.matchmaking.presentation.viewmodels.LobbyViewModel
 @Composable
 fun LobbyScreen(
     viewModel: LobbyViewModel = hiltViewModel(),
-    onMatchFound: (String) -> Unit
+    onMatchFound: (String) -> Unit,
+    onOpenQuestionsAdmin: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -70,6 +71,18 @@ fun LobbyScreen(
                 }
             }
             else {
+                if (uiState.isAdmin) {
+                    OutlinedButton(
+                        onClick = onOpenQuestionsAdmin,
+                        modifier = Modifier.fillMaxWidth().height(56.dp),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("ADMIN: GESTIONAR PREGUNTAS", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+
                 Button(
                     onClick = { viewModel.startMatchmaking() },
                     modifier = Modifier.fillMaxWidth().height(56.dp),

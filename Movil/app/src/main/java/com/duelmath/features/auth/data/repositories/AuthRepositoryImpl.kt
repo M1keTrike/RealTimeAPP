@@ -29,6 +29,7 @@ class AuthRepositoryImpl @Inject constructor(
                 localDataSource.saveToken(response.data.accessToken)
                 localDataSource.saveUserId(domainData.user.id)
                 localDataSource.saveUsername(domainData.user.username)
+                localDataSource.saveUserRole(domainData.user.role.value)
                 Result.success(response.data.toDomain())
             } catch (e: HttpException) {
                 Result.failure(Exception(parseHttpError(e, "Error en el servidor de autenticación")))
@@ -57,10 +58,12 @@ class AuthRepositoryImpl @Inject constructor(
             try {
                 val request = GoogleSignInRequest(idToken = idToken)
                 val response = authApiService.googleSignIn(request)
+                val domainData = response.data.toDomain()
                 localDataSource.saveToken(response.data.accessToken)
-                localDataSource.saveUserId(response.data.id)
-                localDataSource.saveUsername(response.data.username)
-                Result.success(response.data.toDomain())
+                localDataSource.saveUserId(domainData.user.id)
+                localDataSource.saveUsername(domainData.user.username)
+                localDataSource.saveUserRole(domainData.user.role.value)
+                Result.success(domainData)
             } catch (e: HttpException) {
                 Result.failure(Exception(parseHttpError(e, "Error al autenticar con Google")))
             } catch (e: Exception) {

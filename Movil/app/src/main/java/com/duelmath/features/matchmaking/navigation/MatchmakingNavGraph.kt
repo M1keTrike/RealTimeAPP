@@ -6,6 +6,7 @@ import androidx.navigation.compose.composable
 import com.duelmath.core.navigation.FeatureNavGraph
 import com.duelmath.core.navigation.GameRoute
 import com.duelmath.core.navigation.LobbyRoute
+import com.duelmath.core.navigation.QuestionsRoute
 import com.duelmath.features.matchmaking.presentation.screens.LobbyScreen
 import javax.inject.Inject
 
@@ -17,7 +18,10 @@ class MatchmakingNavGraph @Inject constructor() : FeatureNavGraph {
             LobbyScreen(
                 onMatchFound = { sessionId ->
                     navController.navigate(GameRoute(sessionId))
-                }
+                },
+                onOpenQuestionsAdmin = {
+                    navController.navigate(QuestionsRoute)
+                },
             )
         }
     }
