@@ -14,7 +14,7 @@ import okhttp3.WebSocketListener
 import org.json.JSONObject
 import javax.inject.Inject
 
-private const val WS_BASE_URL = "ws://10.14.0.94:8080/ws"
+private const val WS_BASE_URL = "ws://10.14.0.22:8080/ws"
 
 class GameWebSocketDataSourceImpl @Inject constructor(
     private val okHttpClient: OkHttpClient

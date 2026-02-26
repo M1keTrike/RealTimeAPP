@@ -1,6 +1,5 @@
 package com.duelmath.features.auth.presentation.screens
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -13,10 +12,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.duelmath.core.ui.theme.*
 import com.duelmath.features.auth.presentation.components.*
 import com.duelmath.features.auth.presentation.viewmodels.AuthViewModel
 
@@ -68,54 +68,100 @@ fun RegisterScreen(
             )
         }
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            AuthHeader("Sign Up", "Create your account to start dueling")
-            Spacer(modifier = Modifier.height(32.dp))
+        RegisterContent(
+            modifier = Modifier.padding(innerPadding),
+            username = username,
+            email = email,
+            password = password,
+            isLoading = uiState.isLoading,
+            onUsernameChange = { viewModel.username.value = it },
+            onEmailChange = { viewModel.email.value = it },
+            onPasswordChange = { viewModel.password.value = it },
+            onRegisterClick = { viewModel.register() },
+            onGoogleClick = { viewModel.googleSignIn(context) }
+        )
+    }
+}
 
-            AuthSocialLogins(
-                onGoogleClick = { viewModel.googleSignIn(context) },
-            )
+// 2. Versión Stateless
+@Composable
+private fun RegisterContent(
+    modifier: Modifier = Modifier,
+    username: String,
+    email: String,
+    password: String,
+    isLoading: Boolean,
+    onUsernameChange: (String) -> Unit,
+    onEmailChange: (String) -> Unit,
+    onPasswordChange: (String) -> Unit,
+    onRegisterClick: () -> Unit,
+    onGoogleClick: () -> Unit
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        AuthHeader("Sign Up", "Create your account to start dueling")
+        Spacer(modifier = Modifier.height(32.dp))
 
-            Spacer(modifier = Modifier.height(24.dp))
-            AuthTextField(
-                value = username,
-                onValueChange = { viewModel.username.value = it },
-                label = "Username",
-                placeholder = "patata",
-                keyboardType = KeyboardType.Text
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            AuthTextField(
-                value = email,
-                onValueChange = { viewModel.email.value = it },
-                label = "Email",
-                placeholder = "player@example.com",
-                keyboardType = KeyboardType.Email
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            AuthTextField(
-                value = password,
-                onValueChange = { viewModel.password.value = it },
-                label = "Password",
-                placeholder = "At least 6 characters",
-                isPassword = true
-            )
+        AuthSocialLogins(
+            onGoogleClick = onGoogleClick,
+        )
 
-            Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(24.dp))
+        AuthTextField(
+            value = username,
+            onValueChange = onUsernameChange,
+            label = "Username",
+            placeholder = "patata",
+            keyboardType = KeyboardType.Text
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        AuthTextField(
+            value = email,
+            onValueChange = onEmailChange,
+            label = "Email",
+            placeholder = "player@example.com",
+            keyboardType = KeyboardType.Email
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        AuthTextField(
+            value = password,
+            onValueChange = onPasswordChange,
+            label = "Password",
+            placeholder = "At least 6 characters",
+            isPassword = true
+        )
 
-            AuthMainButton(
-                text = "Create Account",
-                onClick = { viewModel.register() },
-                isLoading = uiState.isLoading
-            )
-        }
+        Spacer(modifier = Modifier.height(32.dp))
+
+        AuthMainButton(
+            text = "Create Account",
+            onClick = onRegisterClick,
+            isLoading = isLoading
+        )
+    }
+}
+
+// 3. Preview
+@Preview(showBackground = true, backgroundColor = 0xFF0F0F0F)
+@Composable
+fun RegisterContentPreview() {
+    MaterialTheme {
+        RegisterContent(
+            username = "",
+            email = "",
+            password = "",
+            isLoading = false,
+            onUsernameChange = {},
+            onEmailChange = {},
+            onPasswordChange = {},
+            onRegisterClick = {},
+            onGoogleClick = {}
+        )
     }
 }

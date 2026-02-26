@@ -17,7 +17,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.duelmath.core.ui.components.DuelMathLoadingIndicator
 import com.duelmath.features.auth.presentation.components.AuthHeader
-import com.duelmath.features.auth.presentation.components.DarkBackground
+import com.duelmath.core.ui.theme.*
 import com.duelmath.features.matchmaking.domain.entities.GameSessionStatus
 import com.duelmath.features.matchmaking.presentation.viewmodels.LobbyViewModel
 
