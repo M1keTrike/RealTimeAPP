@@ -67,20 +67,13 @@ services:
         - "80:80"
         - "443:443"
       volumes:
-        - ./nginx.conf:/etc/nginx/conf.d
-        - ./nginx/certbot/conf:/etc/letsencrypt
-        - ./nginx/certbot/www:/var/www/certbot
+        - ./nginx/conf:/etc/nginx/conf.d:ro
+        - ./nginx/certbot/conf:/etc/letsencrypt:ro 
       depends_on:
         - api-nest
         - ws-go
+    
   
-  certbot:
-    image: certbot/certbot
-    container_name: mathduel_certbot
-    volumes:
-      - ./nginx/certbot/conf:/etc/letsencrypt
-      - ./nginx/certbot/www:/var/www/certbot
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
 
 volumes:
   pgdata:
