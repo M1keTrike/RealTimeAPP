@@ -1,5 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToMany, JoinColumn, ManyToOne } from 'typeorm';
 import { RoundOrmEntity } from './round.orm-entity';
+import { UserOrmEntity } from 'src/modules/users/infrastructure/persistence/user.orm-entity';
 
 @Entity('game_sessions')
 export class GameSessionOrmEntity {
@@ -9,8 +10,16 @@ export class GameSessionOrmEntity {
   @Column({ name: 'user1_id', type: 'uuid' })
   user1Id: string;
 
+  @ManyToOne(() => UserOrmEntity)
+  @JoinColumn({ name: 'user1_id' })
+  user1: UserOrmEntity;
+
   @Column({ name: 'user2_id', type: 'uuid', nullable: true })
   user2Id: string | null;
+
+  @ManyToOne(() => UserOrmEntity)
+  @JoinColumn({ name: 'user2_id' })
+  user2: UserOrmEntity;
 
   @Column({ name: 'winner_id', type: 'uuid', nullable: true })
   winnerId: string | null;
