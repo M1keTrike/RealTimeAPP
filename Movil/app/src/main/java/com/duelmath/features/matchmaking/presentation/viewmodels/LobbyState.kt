@@ -7,5 +7,6 @@ data class LobbyState(
     val errorMessage: String? = null,
     val currentSession: GameSession? = null,
     val isAdmin: Boolean = false,
-    val logoutSuccess: Boolean = false
+    val logoutSuccess: Boolean = false,
+    val currentElo: Int? = null
 )

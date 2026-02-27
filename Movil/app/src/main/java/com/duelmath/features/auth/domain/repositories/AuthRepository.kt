@@ -8,4 +8,5 @@ interface AuthRepository {
     suspend fun register(username: String, email: String, password: String): Result<User>
     suspend fun googleSignIn(idToken: String): Result<AuthResult>
     suspend fun logout()
+    suspend fun updateEloRating(userId: String, newEloRating: Int): Result<Int>
 }

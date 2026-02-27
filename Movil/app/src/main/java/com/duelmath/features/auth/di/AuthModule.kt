@@ -6,6 +6,7 @@ import com.duelmath.core.di.ApiRetrofit
 import com.duelmath.features.auth.data.datasources.local.AuthLocalDataSource
 import com.duelmath.features.auth.data.datasources.local.AuthLocalDataSourceImpl
 import com.duelmath.features.auth.data.datasources.remote.api.AuthApiService
+import com.duelmath.features.auth.data.datasources.remote.api.UserApiService
 import com.duelmath.features.auth.data.repositories.AuthRepositoryImpl
 import com.duelmath.features.auth.domain.repositories.AuthRepository
 import com.google.firebase.auth.FirebaseAuth
@@ -45,6 +46,14 @@ object AuthModuleProvides {
         @ApiRetrofit retrofit: Retrofit
     ): AuthApiService {
         return retrofit.create(AuthApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideUserApiService(
+        @ApiRetrofit retrofit: Retrofit
+    ): UserApiService {
+        return retrofit.create(UserApiService::class.java)
     }
 
     @Provides

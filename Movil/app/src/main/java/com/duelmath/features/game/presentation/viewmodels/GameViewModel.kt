@@ -3,6 +3,7 @@ package com.duelmath.features.game.presentation.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.duelmath.features.auth.data.datasources.local.AuthLocalDataSource
+import com.duelmath.features.auth.domain.repositories.AuthRepository
 import com.duelmath.features.game.domain.entities.GameEvent
 import com.duelmath.features.game.domain.usecases.ConnectToGameUseCase
 import com.duelmath.features.game.domain.usecases.DisconnectFromGameUseCase
@@ -28,7 +29,8 @@ class GameViewModel @Inject constructor(
     private val observeGameEventsUseCase: ObserveGameEventsUseCase,
     private val sendAnswerUseCase: SendAnswerUseCase,
     private val disconnectFromGameUseCase: DisconnectFromGameUseCase,
-    private val authLocalDataSource: AuthLocalDataSource
+    private val authLocalDataSource: AuthLocalDataSource,
+    private val authRepository: AuthRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(GameUiState())
@@ -147,11 +149,34 @@ class GameViewModel @Inject constructor(
             is GameEvent.GameOver -> {
                 countdownJob?.cancel()
                 val iWon = event.winnerId == myUserId
+                val isDraw = event.winnerId == null
+
+                // Use backend-provided ELO change if available; otherwise fall back to defaults
+                val eloChange = myUserId?.let { event.eloChanges[it] } ?: when {
+                    iWon   -> +15
+                    isDraw ->   0
+                    else   -> -15
+                }
+                val currentElo = authLocalDataSource.getEloRating() ?: 1200
+                val newElo = (currentElo + eloChange).coerceAtLeast(0)
+
+                // Sync new ELO with backend (also saves locally on success)
+                val userId = myUserId
+                if (userId != null) {
+                    viewModelScope.launch {
+                        authRepository.updateEloRating(userId, newElo)
+                    }
+                } else {
+                    authLocalDataSource.saveEloRating(newElo)
+                }
+
                 _uiState.update {
                     it.copy(
                         isGameOver = true,
                         gameWinnerId = event.winnerId,
-                        gameOverReason = event.reason
+                        gameOverReason = event.reason,
+                        myEloChange = eloChange,
+                        myNewElo = newElo
                     )
                 }
                 if (iWon) {

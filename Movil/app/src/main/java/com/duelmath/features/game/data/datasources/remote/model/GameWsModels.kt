@@ -28,7 +28,8 @@ sealed class GameWsMessage {
     data class GameOver(
         val winnerId: String?,
         val reason: String,
-        val scores: Map<String, Int>
+        val scores: Map<String, Int>,
+        val eloChanges: Map<String, Int> = emptyMap()
     ) : GameWsMessage()
     data class Error(val code: String, val message: String) : GameWsMessage()
     data object Pong : GameWsMessage()
