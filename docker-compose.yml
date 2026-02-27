@@ -1,0 +1,79 @@
+
+# Docker Compose lee automáticamente el archivo .env ubicado en este mismo
+# directorio. Copia .env.example → .env y rellena los valores antes de
+# ejecutar `docker compose up`.
+
+services:
+  db-postgres:
+    image: postgres:15-alpine
+    container_name: mathduel_db
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  api-nest:
+    build:
+      context: ./Backend/api
+      dockerfile: Dockerfile
+    container_name: mathduel_api
+    restart: always
+    expose:
+      - "3000"
+    environment:
+      # Conexión a la base de datos — DB_HOST usa el nombre del servicio Docker
+      - DB_HOST=db-postgres
+      - DB_PORT=5432
+      - DB_USER=${POSTGRES_USER}
+      - DB_PASSWORD=${POSTGRES_PASSWORD}
+      - DB_NAME=${POSTGRES_DB}
+
+      # Autenticación
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+
+      - PORT=3000
+    depends_on:
+      - db-postgres
+
+  ws-go:
+    build:
+      context: ./WebSocket
+      dockerfile: Dockerfile
+    container_name: mathduel_ws
+    restart: always
+    expose:
+      - "8080"
+    environment:
+      - PORT=8080
+      - JWT_SECRET=${JWT_SECRET}
+      - NESTJS_API_URL=http://api-nest:3000
+      - GAME_ROUNDS=${GAME_ROUNDS}
+      - ROUND_TIMEOUT_SECONDS=${ROUND_TIMEOUT_SECONDS}
+    depends_on:
+      - api-nest
+
+  nginx:
+      image: nginx:alpine
+      container_name: mathduel_nginx
+      restart: always
+      ports:
+        - "80:80"
+        - "443:443"
+      volumes:
+        - ./nginx/conf:/etc/nginx/conf.d:ro
+        - ./nginx/certbot/conf:/etc/letsencrypt:ro 
+      depends_on:
+        - api-nest
+        - ws-go
+    
+  
+
+volumes:
+  pgdata:

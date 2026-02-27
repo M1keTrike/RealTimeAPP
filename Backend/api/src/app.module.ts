@@ -1,10 +1,24 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { ConfigModule } from '@nestjs/config';
+import { DatabaseModule } from './core/infrastructure/database/database.module';
+import { UsersModule } from './modules/users/infrastructure/users.module';
+import { AuthModule } from './modules/auth/infrastructure/auth.module';
+import { GameSessionsModule } from './modules/game-sessions/infrastructure/game-sessions.module';
+import { QuestionsModule } from './modules/questions/infrastructure/questions.module';
 
 @Module({
-  imports: [],
-  controllers: [AppController],
-  providers: [AppService],
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: '.env',
+    }),
+    DatabaseModule,
+    UsersModule,
+    AuthModule,
+    GameSessionsModule, 
+    QuestionsModule
+  ],
+  controllers: [],
+  providers: [],
 })
 export class AppModule {}

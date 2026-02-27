@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "519791700688",
+    "project_id": "duelmath-88537",
+    "storage_bucket": "duelmath-88537.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:519791700688:android:62896ae3382c540f0eccd5",
+        "android_client_info": {
+          "package_name": "com.duelmath"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "519791700688-9gnl9vv7u0vmk984g1rabvanr51uo9b1.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.duelmath",
+            "certificate_hash": "d3b0f966d60011880e20e7e5d76c2ced41a244ba"
+          }
+        },
+        {
+          "client_id": "519791700688-lg6fu6r3ungtefs1hg9l8e7em68pffrs.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBxDMC1Q2Z5fjR00jIaG-AeBQc8GsME6Nc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "519791700688-lg6fu6r3ungtefs1hg9l8e7em68pffrs.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

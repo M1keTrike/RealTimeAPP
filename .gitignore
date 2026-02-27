@@ -1,5 +1,3 @@
-===========================================================================
-
 .DS_Store
 Thumbs.db
 .vscode/
@@ -69,3 +67,5 @@ docker-compose.override.yml
 
 .cache/
 temp/
+
+dist/
