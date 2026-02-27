@@ -126,10 +126,13 @@ class GameWebSocketDataSourceImpl @Inject constructor(
                 "game_over" -> {
                     val scoresJson = payload?.optJSONObject("scores")
                     val scores = buildScoresMap(scoresJson)
+                    val eloChangesJson = payload?.optJSONObject("elo_changes")
+                    val eloChanges = buildScoresMap(eloChangesJson)
                     GameWsMessage.GameOver(
                         winnerId = payload?.optString("winner_id")?.takeIf { it.isNotBlank() },
                         reason = payload?.optString("reason") ?: "",
-                        scores = scores
+                        scores = scores,
+                        eloChanges = eloChanges
                     )
                 }
                 "error" -> GameWsMessage.Error(

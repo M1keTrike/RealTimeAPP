@@ -2,10 +2,12 @@ package com.duelmath.features.auth.data.repositories
 
 import com.duelmath.features.auth.data.datasources.local.AuthLocalDataSource
 import com.duelmath.features.auth.data.datasources.remote.api.AuthApiService
+import com.duelmath.features.auth.data.datasources.remote.api.UserApiService
 import com.duelmath.features.auth.data.datasources.remote.mapper.toDomain
 import com.duelmath.features.auth.data.datasources.remote.model.GoogleSignInRequest
 import com.duelmath.features.auth.data.datasources.remote.model.LoginRequest
 import com.duelmath.features.auth.data.datasources.remote.model.RegisterRequest
+import com.duelmath.features.auth.data.datasources.remote.model.UpdateEloRequest
 import com.duelmath.features.auth.domain.entities.AuthResult
 import com.duelmath.features.auth.domain.entities.User
 import com.duelmath.features.auth.domain.repositories.AuthRepository
@@ -17,6 +19,7 @@ import retrofit2.HttpException
 
 class AuthRepositoryImpl @Inject constructor(
     private val authApiService: AuthApiService,
+    private val userApiService: UserApiService,
     private val localDataSource: AuthLocalDataSource
 ) : AuthRepository {
 
@@ -30,6 +33,7 @@ class AuthRepositoryImpl @Inject constructor(
                 localDataSource.saveUserId(domainData.user.id)
                 localDataSource.saveUsername(domainData.user.username)
                 localDataSource.saveUserRole(domainData.user.role.value)
+                localDataSource.saveEloRating(domainData.user.eloRating)
                 Result.success(response.data.toDomain())
             } catch (e: HttpException) {
                 Result.failure(Exception(parseHttpError(e, "Error en el servidor de autenticación")))
@@ -63,6 +67,7 @@ class AuthRepositoryImpl @Inject constructor(
                 localDataSource.saveUserId(domainData.user.id)
                 localDataSource.saveUsername(domainData.user.username)
                 localDataSource.saveUserRole(domainData.user.role.value)
+                localDataSource.saveEloRating(domainData.user.eloRating)
                 Result.success(domainData)
             } catch (e: HttpException) {
                 Result.failure(Exception(parseHttpError(e, "Error al autenticar con Google")))
@@ -74,6 +79,21 @@ class AuthRepositoryImpl @Inject constructor(
 
     override suspend fun logout() {
         localDataSource.clearSession()
+    }
+
+    override suspend fun updateEloRating(userId: String, newEloRating: Int): Result<Int> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val request = UpdateEloRequest(eloRating = newEloRating)
+                val response = userApiService.updateEloRating(userId, request)
+                localDataSource.saveEloRating(response.data.eloRating)
+                Result.success(response.data.eloRating)
+            } catch (e: HttpException) {
+                Result.failure(Exception(parseHttpError(e, "Error al actualizar el ELO")))
+            } catch (e: Exception) {
+                Result.failure(Exception("Error de conexión. No se pudo sincronizar el ELO."))
+            }
+        }
     }
 
     private fun parseHttpError(e: HttpException, fallback: String): String {

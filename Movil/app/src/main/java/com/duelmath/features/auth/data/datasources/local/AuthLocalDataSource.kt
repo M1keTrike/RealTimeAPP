@@ -5,10 +5,11 @@ interface AuthLocalDataSource {
     suspend fun getToken(): String?
     suspend fun saveUserId(userId: String)
     suspend fun getUserId(): String?
-
     suspend fun saveUsername(username: String)
     suspend fun getUsername(): String?
     suspend fun saveUserRole(role: String)
     suspend fun getUserRole(): String?
+    suspend fun saveEloRating(rating: Int)
+    suspend fun getEloRating(): Int?
     suspend fun clearSession()
 }

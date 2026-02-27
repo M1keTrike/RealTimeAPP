@@ -35,7 +35,15 @@ class LobbyViewModel @Inject constructor(
     private fun loadUserRole() {
         viewModelScope.launch {
             val role = localDataSource.getUserRole()
-            _uiState.update { it.copy(isAdmin = role == UserRole.ADMIN.value) }
+            val elo = localDataSource.getEloRating()
+            _uiState.update { it.copy(isAdmin = role == UserRole.ADMIN.value, currentElo = elo) }
+        }
+    }
+
+    fun refreshElo() {
+        viewModelScope.launch {
+            val elo = localDataSource.getEloRating()
+            _uiState.update { it.copy(currentElo = elo) }
         }
     }
 
