@@ -34,3 +34,13 @@ data class UserResponse(
 data class GoogleSignInRequest(
     val idToken: String
 )
+
+data class UpdateEloRequest(
+    val eloRating: Int
+)
+
+data class EloResponse(
+    val id: String,
+    val username: String,
+    val eloRating: Int
+)

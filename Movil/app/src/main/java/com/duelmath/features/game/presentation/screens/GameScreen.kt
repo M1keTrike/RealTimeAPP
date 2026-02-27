@@ -477,11 +477,9 @@ private fun GameOverOverlay(uiState: GameUiState, onContinue: () -> Unit) {
                 modifier = Modifier.padding(32.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                val isWinner = uiState.gameWinnerId != null
-
                 Text(
                     text = if (uiState.gameOverReason == "opponent_disconnected")
-                        "Victoria por abandono" else if (isWinner) "Partida terminada" else "Partida terminada",
+                        "Victoria por abandono" else "Partida terminada",
                     color = Color.Gray,
                     fontSize = 12.sp
                 )
@@ -518,6 +516,13 @@ private fun GameOverOverlay(uiState: GameUiState, onContinue: () -> Unit) {
                         )
                     }
                 }
+
+                // ELO change indicator
+                uiState.myEloChange?.let { delta ->
+                    Spacer(Modifier.height(20.dp))
+                    EloChangeBadge(delta = delta, newElo = uiState.myNewElo)
+                }
+
                 Spacer(Modifier.height(24.dp))
                 Button(
                     onClick = onContinue,
@@ -527,6 +532,49 @@ private fun GameOverOverlay(uiState: GameUiState, onContinue: () -> Unit) {
                     Text("VOLVER AL LOBBY", fontWeight = FontWeight.Bold)
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun EloChangeBadge(delta: Int, newElo: Int?) {
+    val (chipColor, sign, label) = when {
+        delta > 0  -> Triple(Color(0xFF16A34A), "+", "ELO")
+        delta < 0  -> Triple(Color(0xFFDC2626), "",  "ELO")
+        else       -> Triple(Color(0xFF6B7280), "+", "ELO")
+    }
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Surface(
+            shape = RoundedCornerShape(50),
+            color = chipColor.copy(alpha = 0.15f),
+            border = androidx.compose.foundation.BorderStroke(1.dp, chipColor.copy(alpha = 0.6f))
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = "$sign$delta",
+                    color = chipColor,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = label,
+                    color = chipColor.copy(alpha = 0.8f),
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+        }
+        newElo?.let {
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = "ELO actual: $it",
+                color = Color.Gray,
+                fontSize = 12.sp
+            )
         }
     }
 }

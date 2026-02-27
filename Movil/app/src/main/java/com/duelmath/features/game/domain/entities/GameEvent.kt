@@ -18,7 +18,8 @@ sealed class GameEvent {
     data class GameOver(
         val winnerId: String?,
         val reason: String,
-        val scores: Map<String, Int>
+        val scores: Map<String, Int>,
+        val eloChanges: Map<String, Int> = emptyMap()
     ) : GameEvent()
     data class Error(val code: String, val message: String) : GameEvent()
     data object Disconnected : GameEvent()

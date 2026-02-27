@@ -30,7 +30,10 @@ data class GameUiState(
     // Game over
     val isGameOver: Boolean = false,
     val gameWinnerId: String? = null,
-    val gameOverReason: String? = null
+    val gameOverReason: String? = null,
+    // ELO change after game (null = no data received yet)
+    val myEloChange: Int? = null,
+    val myNewElo: Int? = null
 )
 
 /** One-time side-effects emitted via SharedFlow — never stored in state. */

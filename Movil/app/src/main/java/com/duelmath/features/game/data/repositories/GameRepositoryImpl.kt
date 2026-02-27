@@ -107,7 +107,8 @@ class GameRepositoryImpl @Inject constructor(
                     GameEvent.GameOver(
                         winnerId = message.winnerId,
                         reason = message.reason,
-                        scores = message.scores
+                        scores = message.scores,
+                        eloChanges = message.eloChanges
                     )
                 )
             }
