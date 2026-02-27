@@ -4,6 +4,8 @@ import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -25,7 +27,8 @@ import com.duelmath.features.matchmaking.presentation.viewmodels.LobbyViewModel
 fun LobbyScreen(
     viewModel: LobbyViewModel = hiltViewModel(),
     onMatchFound: (String) -> Unit,
-    onOpenQuestionsAdmin: () -> Unit
+    onOpenQuestionsAdmin: () -> Unit,
+    onLogout: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -43,53 +46,74 @@ fun LobbyScreen(
         }
     }
 
+    LaunchedEffect(uiState.logoutSuccess) {
+        if (uiState.logoutSuccess) {
+            onLogout()
+        }
+    }
+
     Surface(modifier = Modifier.fillMaxSize(), color = DarkBackground) {
-        Column(
-            modifier = Modifier.fillMaxSize().padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            AuthHeader("Lobby", "Encuentra un rival digno")
-
-            Spacer(modifier = Modifier.height(64.dp))
-
-            if (uiState.isSearching || uiState.currentSession?.status == GameSessionStatus.WAITING) {
-                val text = if (uiState.isSearching) "Buscando oponente..." else "Sala creada. Esperando al jugador 2..."
-
-                DuelMathLoadingIndicator(message = text)
-
-                Spacer(modifier = Modifier.height(32.dp))
-
-                OutlinedButton(
-                    onClick = { viewModel.cancelMatchmaking() },
-                    modifier = Modifier.fillMaxWidth().height(56.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFEF4444)), // Rojo Tailwind
-                    border = BorderStroke(1.dp, Color(0xFFEF4444).copy(alpha = 0.5f))
-                ) {
-                    Text("CANCELAR BÚSQUEDA", fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                }
+        Box(modifier = Modifier.fillMaxSize()) {
+            IconButton(
+                onClick = { viewModel.logout() },
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                    contentDescription = "Cerrar sesión",
+                    tint = Color(0xFFEF4444)
+                )
             }
-            else {
-                if (uiState.isAdmin) {
+
+            Column(
+                modifier = Modifier.fillMaxSize().padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                AuthHeader("Lobby", "Encuentra un rival digno")
+
+                Spacer(modifier = Modifier.height(64.dp))
+
+                if (uiState.isSearching || uiState.currentSession?.status == GameSessionStatus.WAITING) {
+                    val text = if (uiState.isSearching) "Buscando oponente..." else "Sala creada. Esperando al jugador 2..."
+
+                    DuelMathLoadingIndicator(message = text)
+
+                    Spacer(modifier = Modifier.height(32.dp))
+
                     OutlinedButton(
-                        onClick = onOpenQuestionsAdmin,
+                        onClick = { viewModel.cancelMatchmaking() },
                         modifier = Modifier.fillMaxWidth().height(56.dp),
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFEF4444)),
+                        border = BorderStroke(1.dp, Color(0xFFEF4444).copy(alpha = 0.5f))
                     ) {
-                        Text("ADMIN: GESTIONAR PREGUNTAS", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        Text("CANCELAR BÚSQUEDA", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+                else {
+                    if (uiState.isAdmin) {
+                        OutlinedButton(
+                            onClick = onOpenQuestionsAdmin,
+                            modifier = Modifier.fillMaxWidth().height(56.dp),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text("ADMIN: GESTIONAR PREGUNTAS", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
                     }
 
-                    Spacer(modifier = Modifier.height(12.dp))
-                }
-
-                Button(
-                    onClick = { viewModel.startMatchmaking() },
-                    modifier = Modifier.fillMaxWidth().height(56.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB))
-                ) {
-                    Text("BUSCAR PARTIDA", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Button(
+                        onClick = { viewModel.startMatchmaking() },
+                        modifier = Modifier.fillMaxWidth().height(56.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB))
+                    ) {
+                        Text("BUSCAR PARTIDA", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    }
                 }
             }
         }

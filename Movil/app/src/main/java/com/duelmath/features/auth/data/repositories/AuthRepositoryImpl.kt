@@ -72,6 +72,10 @@ class AuthRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun logout() {
+        localDataSource.clearSession()
+    }
+
     private fun parseHttpError(e: HttpException, fallback: String): String {
         val errorBody = e.response()?.errorBody()?.string()
         return try {

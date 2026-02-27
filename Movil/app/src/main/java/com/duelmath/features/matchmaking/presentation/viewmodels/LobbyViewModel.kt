@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.duelmath.features.auth.data.datasources.local.AuthLocalDataSource
 import com.duelmath.features.auth.domain.entities.UserRole
+import com.duelmath.features.auth.domain.usecases.LogoutUseCase
+import com.duelmath.features.game.domain.usecases.DisconnectFromGameUseCase
 import com.duelmath.features.matchmaking.domain.usecases.CancelMatchUseCase
 import com.duelmath.features.matchmaking.domain.usecases.FindMatchUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -18,7 +20,9 @@ import javax.inject.Inject
 class LobbyViewModel @Inject constructor(
     private val findMatchUseCase: FindMatchUseCase,
     private val cancelMatchUseCase: CancelMatchUseCase,
-    private val localDataSource: AuthLocalDataSource
+    private val localDataSource: AuthLocalDataSource,
+    private val logoutUseCase: LogoutUseCase,
+    private val disconnectFromGameUseCase: DisconnectFromGameUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LobbyState())
@@ -68,6 +72,18 @@ class LobbyViewModel @Inject constructor(
                     currentSession = null
                 )
             }
+        }
+    }
+
+    fun logout() {
+        viewModelScope.launch {
+            val currentSessionId = _uiState.value.currentSession?.id
+            if (currentSessionId != null) {
+                cancelMatchUseCase(currentSessionId)
+            }
+            disconnectFromGameUseCase()
+            logoutUseCase()
+            _uiState.update { it.copy(logoutSuccess = true) }
         }
     }
 
