@@ -5,9 +5,11 @@ import androidx.lifecycle.viewModelScope
 import com.duelmath.features.auth.data.datasources.local.AuthLocalDataSource
 import com.duelmath.features.auth.domain.repositories.AuthRepository
 import com.duelmath.features.game.domain.entities.GameEvent
+import com.duelmath.features.game.domain.entities.RoundResult
 import com.duelmath.features.game.domain.usecases.ConnectToGameUseCase
 import com.duelmath.features.game.domain.usecases.DisconnectFromGameUseCase
 import com.duelmath.features.game.domain.usecases.ObserveGameEventsUseCase
+import com.duelmath.features.game.domain.usecases.ObserveRoundResultsUseCase
 import com.duelmath.features.game.domain.usecases.SendAnswerUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -27,6 +29,7 @@ import javax.inject.Inject
 class GameViewModel @Inject constructor(
     private val connectToGameUseCase: ConnectToGameUseCase,
     private val observeGameEventsUseCase: ObserveGameEventsUseCase,
+    private val observeRoundResultsUseCase: ObserveRoundResultsUseCase,
     private val sendAnswerUseCase: SendAnswerUseCase,
     private val disconnectFromGameUseCase: DisconnectFromGameUseCase,
     private val authLocalDataSource: AuthLocalDataSource,
@@ -36,7 +39,6 @@ class GameViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(GameUiState())
     val uiState: StateFlow<GameUiState> = _uiState.asStateFlow()
 
-    // One-time events: errors, round feedback, game over — never replayed
     private val _sideEffect = MutableSharedFlow<GameSideEffect>(
         replay = 0,
         extraBufferCapacity = 16,
@@ -47,8 +49,12 @@ class GameViewModel @Inject constructor(
     private var myUserId: String? = null
     private var countdownJob: Job? = null
 
+    // Tracks the last round result processed from Room to avoid re-handling on re-emission
+    private var lastProcessedRound = 0
+
     init {
         observeEvents()
+        observeRoundResults()
         viewModelScope.launch { connectOnStart() }
     }
 
@@ -61,18 +67,11 @@ class GameViewModel @Inject constructor(
 
     /**
      * Optimistic update: the UI immediately reflects the user's selection.
-     * Rollback happens when [GameEvent.RoundEnded] arrives and
-     * [RoundResult.correctOptionId] differs from the selected option —
-     * the Screen highlights the correct answer and marks the selected one as wrong.
+     * The round result from Room will later reveal whether the selection was correct.
      */
     fun selectAnswer(questionId: String, optionId: String) {
-        // Ignore if answer already submitted for this round or result is showing
         if (_uiState.value.selectedOptionId != null || _uiState.value.isShowingResult) return
-
-        // Optimistic update — instantly reflect in the UI
         _uiState.update { it.copy(selectedOptionId = optionId) }
-
-        // Send to WebSocket server
         sendAnswerUseCase(questionId, optionId)
     }
 
@@ -88,6 +87,43 @@ class GameViewModel @Inject constructor(
         }
     }
 
+    // Observes Room as SSOT for round results.
+    // Room emits the full list on every insert; we only react to rounds not yet processed.
+    private fun observeRoundResults() {
+        viewModelScope.launch {
+            observeRoundResultsUseCase().collect { results ->
+                val newResult = results.lastOrNull { it.roundNumber > lastProcessedRound }
+                    ?: return@collect
+                lastProcessedRound = newResult.roundNumber
+                handleRoundResult(newResult)
+            }
+        }
+    }
+
+    private suspend fun handleRoundResult(result: RoundResult) {
+        countdownJob?.cancel()
+        val myId = myUserId
+        val myScore = if (myId != null) result.scores[myId] ?: 0 else 0
+        val opponentScore = result.scores.entries
+            .firstOrNull { it.key != myId }?.value ?: 0
+
+        _uiState.update {
+            it.copy(
+                correctOptionId = result.correctOptionId,
+                roundWinnerId = result.winnerId,
+                myScore = myScore,
+                opponentScore = opponentScore,
+                isShowingResult = true
+            )
+        }
+
+        if (result.winnerId == myId) {
+            _sideEffect.emit(GameSideEffect.RoundWon)
+        } else if (result.winnerId != null) {
+            _sideEffect.emit(GameSideEffect.RoundLost)
+        }
+    }
+
     private suspend fun handleEvent(event: GameEvent) {
         when (event) {
             is GameEvent.Authenticated -> {
@@ -97,6 +133,8 @@ class GameViewModel @Inject constructor(
                 _uiState.update { it.copy(isWaiting = true) }
             }
             is GameEvent.GameStarted -> {
+                // Reset round tracking for the new game session
+                lastProcessedRound = 0
                 _uiState.update {
                     it.copy(
                         isWaiting = false,
@@ -114,7 +152,7 @@ class GameViewModel @Inject constructor(
                         question = event.question,
                         timeLimitSeconds = event.timeLimitSeconds,
                         remainingSeconds = event.timeLimitSeconds,
-                        selectedOptionId = null,   // reset optimistic selection
+                        selectedOptionId = null,
                         correctOptionId = null,
                         isShowingResult = false,
                         roundWinnerId = null
@@ -122,36 +160,11 @@ class GameViewModel @Inject constructor(
                 }
                 startCountdown(event.timeLimitSeconds)
             }
-            is GameEvent.RoundEnded -> {
-                countdownJob?.cancel()
-                val result = event.result
-                val myId = myUserId
-                val myScore = if (myId != null) result.scores[myId] ?: 0 else 0
-                val opponentScore = result.scores.entries
-                    .firstOrNull { it.key != myId }?.value ?: 0
-
-                // If correctOptionId != selectedOptionId → rollback: UI shows error highlight
-                _uiState.update {
-                    it.copy(
-                        correctOptionId = result.correctOptionId,
-                        roundWinnerId = result.winnerId,
-                        myScore = myScore,
-                        opponentScore = opponentScore,
-                        isShowingResult = true
-                    )
-                }
-                if (result.winnerId == myId) {
-                    _sideEffect.emit(GameSideEffect.RoundWon)
-                } else if (result.winnerId != null) {
-                    _sideEffect.emit(GameSideEffect.RoundLost)
-                }
-            }
             is GameEvent.GameOver -> {
                 countdownJob?.cancel()
                 val iWon = event.winnerId == myUserId
                 val isDraw = event.winnerId == null
 
-                // Use backend-provided ELO change if available; otherwise fall back to defaults
                 val eloChange = myUserId?.let { event.eloChanges[it] } ?: when {
                     iWon   -> +15
                     isDraw ->   0
@@ -160,7 +173,6 @@ class GameViewModel @Inject constructor(
                 val currentElo = authLocalDataSource.getEloRating() ?: 1200
                 val newElo = (currentElo + eloChange).coerceAtLeast(0)
 
-                // Sync new ELO with backend (also saves locally on success)
                 val userId = myUserId
                 if (userId != null) {
                     viewModelScope.launch {

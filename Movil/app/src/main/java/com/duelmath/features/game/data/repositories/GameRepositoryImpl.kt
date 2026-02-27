@@ -1,6 +1,11 @@
 package com.duelmath.features.game.data.repositories
 
-import com.duelmath.features.game.data.datasources.local.GameLocalDataSource
+import com.duelmath.features.game.data.datasources.local.db.GameRoundDao
+import com.duelmath.features.game.data.datasources.local.db.GameRoundEntity
+import com.duelmath.features.game.data.datasources.local.db.GameSessionDao
+import com.duelmath.features.game.data.datasources.local.db.GameSessionEntity
+import com.duelmath.features.game.data.datasources.local.db.RoundResultDao
+import com.duelmath.features.game.data.datasources.local.db.RoundResultEntity
 import com.duelmath.features.game.data.datasources.remote.model.GameWsMessage
 import com.duelmath.features.game.data.datasources.remote.ws.GameWebSocketDataSource
 import com.duelmath.features.game.domain.entities.GameEvent
@@ -12,9 +17,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import org.json.JSONArray
 import org.json.JSONObject
@@ -24,11 +31,15 @@ import javax.inject.Singleton
 @Singleton
 class GameRepositoryImpl @Inject constructor(
     private val wsDataSource: GameWebSocketDataSource,
-    private val localDataSource: GameLocalDataSource
+    private val roundResultDao: RoundResultDao,
+    private val gameSessionDao: GameSessionDao,
+    private val gameRoundDao: GameRoundDao
 ) : GameRepository {
 
-    // Scope tied to the Singleton lifetime — lives as long as the app
     private val repositoryScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    // Cached across messages: RoundStarted doesn't carry sessionId, so we track it from GameStarted
+    private var currentSessionId: String = ""
 
     private val _events = MutableSharedFlow<GameEvent>(
         replay = 0,
@@ -43,7 +54,8 @@ class GameRepositoryImpl @Inject constructor(
         }
     }
 
-    // SSOT: persist to DataStore BEFORE emitting to the domain layer
+    // Room is the SSOT for all game data that comes from the WebSocket.
+    // DataStore (AuthLocalDataSource) is only used for auth credentials.
     private suspend fun processMessage(message: GameWsMessage) {
         when (message) {
             is GameWsMessage.Authenticated -> {
@@ -53,10 +65,17 @@ class GameRepositoryImpl @Inject constructor(
                 _events.emit(GameEvent.Waiting)
             }
             is GameWsMessage.GameStarted -> {
-                localDataSource.saveSessionInfo(
-                    sessionId = message.sessionId,
-                    opponentUsername = message.opponentUsername,
-                    totalRounds = message.totalRounds
+                currentSessionId = message.sessionId
+                // Clear round results from the previous session
+                roundResultDao.clearAll()
+                // Persist session metadata in Room
+                gameSessionDao.insert(
+                    GameSessionEntity(
+                        sessionId = message.sessionId,
+                        opponentUserId = message.opponentUserId,
+                        opponentUsername = message.opponentUsername,
+                        totalRounds = message.totalRounds
+                    )
                 )
                 _events.emit(
                     GameEvent.GameStarted(
@@ -75,10 +94,14 @@ class GameRepositoryImpl @Inject constructor(
                     difficulty = message.difficulty,
                     options = options
                 )
-                localDataSource.saveCurrentRound(
-                    roundNumber = message.roundNumber,
-                    questionJson = serializeQuestion(question),
-                    timeLimitSeconds = message.timeLimitSeconds
+                // Persist round data in Room (sessionId tracked from GameStarted)
+                gameRoundDao.insert(
+                    GameRoundEntity(
+                        sessionId = currentSessionId,
+                        roundNumber = message.roundNumber,
+                        questionJson = serializeQuestion(question),
+                        timeLimitSeconds = message.timeLimitSeconds
+                    )
                 )
                 _events.emit(
                     GameEvent.RoundStarted(
@@ -89,20 +112,19 @@ class GameRepositoryImpl @Inject constructor(
                 )
             }
             is GameWsMessage.RoundResult -> {
-                localDataSource.saveScoresJson(serializeScores(message.scores))
-                _events.emit(
-                    GameEvent.RoundEnded(
-                        RoundResult(
-                            roundNumber = message.roundNumber,
-                            winnerId = message.winnerId,
-                            correctOptionId = message.correctOptionId,
-                            scores = message.scores
-                        )
+                // Write to Room — ViewModel observes via observeRoundResults()
+                roundResultDao.insert(
+                    RoundResultEntity(
+                        roundNumber = message.roundNumber,
+                        winnerId = message.winnerId,
+                        correctOptionId = message.correctOptionId,
+                        scoresJson = serializeScores(message.scores)
                     )
                 )
             }
             is GameWsMessage.GameOver -> {
-                localDataSource.clearGameData()
+                // Room retains session and round history after the game ends.
+                // Only round results (SSOT for the active game) are reset on next GameStarted.
                 _events.emit(
                     GameEvent.GameOver(
                         winnerId = message.winnerId,
@@ -121,6 +143,9 @@ class GameRepositoryImpl @Inject constructor(
             is GameWsMessage.Pong -> Unit
         }
     }
+
+    override fun observeRoundResults(): Flow<List<RoundResult>> =
+        roundResultDao.observeAll().map { entities -> entities.map { it.toDomain() } }
 
     override fun connect(token: String) = wsDataSource.connect(token)
 
@@ -146,7 +171,17 @@ class GameRepositoryImpl @Inject constructor(
         }.toString()
     }
 
-    private fun serializeScores(scores: Map<String, Int>): String {
-        return JSONObject(scores as Map<*, *>).toString()
+    private fun serializeScores(scores: Map<String, Int>): String =
+        JSONObject(scores as Map<*, *>).toString()
+
+    private fun RoundResultEntity.toDomain(): RoundResult {
+        val json = JSONObject(scoresJson)
+        val scores = json.keys().asSequence().associateWith { json.optInt(it) }
+        return RoundResult(
+            roundNumber = roundNumber,
+            winnerId = winnerId,
+            correctOptionId = correctOptionId,
+            scores = scores
+        )
     }
 }
