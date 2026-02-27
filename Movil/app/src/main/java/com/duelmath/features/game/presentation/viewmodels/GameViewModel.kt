@@ -1,12 +1,16 @@
 package com.duelmath.features.game.presentation.viewmodels
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.duelmath.features.auth.data.datasources.local.AuthLocalDataSource
+import com.duelmath.features.auth.domain.repositories.AuthRepository
 import com.duelmath.features.game.domain.entities.GameEvent
+import com.duelmath.features.game.domain.entities.RoundResult
 import com.duelmath.features.game.domain.usecases.ConnectToGameUseCase
 import com.duelmath.features.game.domain.usecases.DisconnectFromGameUseCase
 import com.duelmath.features.game.domain.usecases.ObserveGameEventsUseCase
+import com.duelmath.features.game.domain.usecases.ObserveRoundResultsUseCase
 import com.duelmath.features.game.domain.usecases.SendAnswerUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -26,15 +30,16 @@ import javax.inject.Inject
 class GameViewModel @Inject constructor(
     private val connectToGameUseCase: ConnectToGameUseCase,
     private val observeGameEventsUseCase: ObserveGameEventsUseCase,
+    private val observeRoundResultsUseCase: ObserveRoundResultsUseCase,
     private val sendAnswerUseCase: SendAnswerUseCase,
     private val disconnectFromGameUseCase: DisconnectFromGameUseCase,
-    private val authLocalDataSource: AuthLocalDataSource
+    private val authLocalDataSource: AuthLocalDataSource,
+    private val authRepository: AuthRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(GameUiState())
     val uiState: StateFlow<GameUiState> = _uiState.asStateFlow()
 
-    // One-time events: errors, round feedback, game over — never replayed
     private val _sideEffect = MutableSharedFlow<GameSideEffect>(
         replay = 0,
         extraBufferCapacity = 16,
@@ -45,36 +50,39 @@ class GameViewModel @Inject constructor(
     private var myUserId: String? = null
     private var countdownJob: Job? = null
 
+    // Tracks the last round result processed from Room to avoid re-handling on re-emission
+    private var lastProcessedRound = 0
+
     init {
+        Log.d("GameVM", "init — GameViewModel created (${hashCode()})")
         observeEvents()
+        observeRoundResults()
         viewModelScope.launch { connectOnStart() }
     }
 
     private suspend fun connectOnStart() {
-        val token = authLocalDataSource.getToken() ?: return
+        val token = authLocalDataSource.getToken() ?: run {
+            Log.e("GameVM", "connectOnStart — token is null, aborting")
+            return
+        }
         myUserId = authLocalDataSource.getUserId()
+        Log.d("GameVM", "connectOnStart — connecting with userId=$myUserId")
         _uiState.update { it.copy(isConnecting = true) }
         connectToGameUseCase(token)
     }
 
     /**
      * Optimistic update: the UI immediately reflects the user's selection.
-     * Rollback happens when [GameEvent.RoundEnded] arrives and
-     * [RoundResult.correctOptionId] differs from the selected option —
-     * the Screen highlights the correct answer and marks the selected one as wrong.
+     * The round result from Room will later reveal whether the selection was correct.
      */
     fun selectAnswer(questionId: String, optionId: String) {
-        // Ignore if answer already submitted for this round or result is showing
         if (_uiState.value.selectedOptionId != null || _uiState.value.isShowingResult) return
-
-        // Optimistic update — instantly reflect in the UI
         _uiState.update { it.copy(selectedOptionId = optionId) }
-
-        // Send to WebSocket server
         sendAnswerUseCase(questionId, optionId)
     }
 
     fun disconnect() {
+        Log.d("GameVM", "disconnect called")
         countdownJob?.cancel()
         disconnectFromGameUseCase()
         _uiState.update { it.copy(isConnected = false) }
@@ -86,15 +94,58 @@ class GameViewModel @Inject constructor(
         }
     }
 
+    // Observes Room as SSOT for round results.
+    // Room emits the full list on every insert; we only react to rounds not yet processed.
+    private fun observeRoundResults() {
+        viewModelScope.launch {
+            observeRoundResultsUseCase().collect { results ->
+                val newResult = results.lastOrNull { it.roundNumber > lastProcessedRound }
+                    ?: return@collect
+                lastProcessedRound = newResult.roundNumber
+                handleRoundResult(newResult)
+            }
+        }
+    }
+
+    private suspend fun handleRoundResult(result: RoundResult) {
+        countdownJob?.cancel()
+        val myId = myUserId
+        val myScore = if (myId != null) result.scores[myId] ?: 0 else 0
+        val opponentScore = result.scores.entries
+            .firstOrNull { it.key != myId }?.value ?: 0
+
+        _uiState.update {
+            it.copy(
+                correctOptionId = result.correctOptionId,
+                roundWinnerId = result.winnerId,
+                myScore = myScore,
+                opponentScore = opponentScore,
+                isShowingResult = true
+            )
+        }
+
+        if (result.winnerId == myId) {
+            _sideEffect.emit(GameSideEffect.RoundWon)
+        } else if (result.winnerId != null) {
+            _sideEffect.emit(GameSideEffect.RoundLost)
+        }
+    }
+
     private suspend fun handleEvent(event: GameEvent) {
+        Log.d("GameVM", "handleEvent — ${event::class.simpleName}")
         when (event) {
             is GameEvent.Authenticated -> {
+                Log.d("GameVM", "Authenticated")
                 _uiState.update { it.copy(isConnecting = false, isConnected = true) }
             }
             is GameEvent.Waiting -> {
+                Log.d("GameVM", "Waiting for opponent")
                 _uiState.update { it.copy(isWaiting = true) }
             }
             is GameEvent.GameStarted -> {
+                Log.d("GameVM", "GameStarted — sessionId=${event.sessionId}, opponent=${event.opponentUsername}")
+                // Reset round tracking for the new game session
+                lastProcessedRound = 0
                 _uiState.update {
                     it.copy(
                         isWaiting = false,
@@ -105,6 +156,7 @@ class GameViewModel @Inject constructor(
                 }
             }
             is GameEvent.RoundStarted -> {
+                Log.d("GameVM", "RoundStarted — round=${event.roundNumber}")
                 countdownJob?.cancel()
                 _uiState.update {
                     it.copy(
@@ -112,7 +164,7 @@ class GameViewModel @Inject constructor(
                         question = event.question,
                         timeLimitSeconds = event.timeLimitSeconds,
                         remainingSeconds = event.timeLimitSeconds,
-                        selectedOptionId = null,   // reset optimistic selection
+                        selectedOptionId = null,
                         correctOptionId = null,
                         isShowingResult = false,
                         roundWinnerId = null
@@ -120,38 +172,36 @@ class GameViewModel @Inject constructor(
                 }
                 startCountdown(event.timeLimitSeconds)
             }
-            is GameEvent.RoundEnded -> {
-                countdownJob?.cancel()
-                val result = event.result
-                val myId = myUserId
-                val myScore = if (myId != null) result.scores[myId] ?: 0 else 0
-                val opponentScore = result.scores.entries
-                    .firstOrNull { it.key != myId }?.value ?: 0
-
-                // If correctOptionId != selectedOptionId → rollback: UI shows error highlight
-                _uiState.update {
-                    it.copy(
-                        correctOptionId = result.correctOptionId,
-                        roundWinnerId = result.winnerId,
-                        myScore = myScore,
-                        opponentScore = opponentScore,
-                        isShowingResult = true
-                    )
-                }
-                if (result.winnerId == myId) {
-                    _sideEffect.emit(GameSideEffect.RoundWon)
-                } else if (result.winnerId != null) {
-                    _sideEffect.emit(GameSideEffect.RoundLost)
-                }
-            }
             is GameEvent.GameOver -> {
+                Log.d("GameVM", "GameOver — winnerId=${event.winnerId}, reason=${event.reason}")
                 countdownJob?.cancel()
                 val iWon = event.winnerId == myUserId
+                val isDraw = event.winnerId == null
+
+                val eloChange = myUserId?.let { event.eloChanges[it] } ?: when {
+                    iWon   -> +15
+                    isDraw ->   0
+                    else   -> -15
+                }
+                val currentElo = authLocalDataSource.getEloRating() ?: 1200
+                val newElo = (currentElo + eloChange).coerceAtLeast(0)
+
+                val userId = myUserId
+                if (userId != null) {
+                    viewModelScope.launch {
+                        authRepository.updateEloRating(userId, newElo)
+                    }
+                } else {
+                    authLocalDataSource.saveEloRating(newElo)
+                }
+
                 _uiState.update {
                     it.copy(
                         isGameOver = true,
                         gameWinnerId = event.winnerId,
-                        gameOverReason = event.reason
+                        gameOverReason = event.reason,
+                        myEloChange = eloChange,
+                        myNewElo = newElo
                     )
                 }
                 if (iWon) {
@@ -161,6 +211,7 @@ class GameViewModel @Inject constructor(
                 }
             }
             is GameEvent.Error -> {
+                Log.e("GameVM", "Error — ${event.message}")
                 _uiState.update {
                     it.copy(
                         isConnecting = false,
@@ -171,6 +222,15 @@ class GameViewModel @Inject constructor(
                 _sideEffect.emit(GameSideEffect.Error(event.message))
             }
             is GameEvent.Disconnected -> {
+                Log.d("GameVM", "Disconnected — isGameOver=${_uiState.value.isGameOver}")
+                // If the game ended normally, the server closes the WebSocket right after
+                // sending game_over. In that case we silently update the connection flag
+                // without showing a misleading error to the user.
+                if (_uiState.value.isGameOver) {
+                    _uiState.update { it.copy(isConnected = false) }
+                    return
+                }
+                // Unexpected mid-game disconnect: update state and notify the user.
                 _uiState.update {
                     it.copy(
                         isConnecting = false,
@@ -193,6 +253,7 @@ class GameViewModel @Inject constructor(
     }
 
     override fun onCleared() {
+        Log.d("GameVM", "onCleared — ViewModel being destroyed (${hashCode()})")
         super.onCleared()
         disconnect()
     }

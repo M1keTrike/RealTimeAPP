@@ -32,4 +32,8 @@ export class UserRepository implements IUserRepository {
     const ormEntity = await this.ormRepo.findOneBy({ username });
     return ormEntity ? UserMapper.toDomain(ormEntity) : null;
   }
+
+  async updateEloRating(userId: string, newEloRating: number): Promise<void> {
+    await this.ormRepo.update({ id: userId }, { eloRating: newEloRating });
+  }
 }

@@ -1,5 +1,3 @@
 <resources>
     <string name="app_name">duelmath</string>
-    <!-- Web Client ID de Firebase para Google Sign-In (no el Android Client ID) -->
-    <string name="default_web_client_id">519791700688-lg6fu6r3ungtefs1hg9l8e7em68pffrs.apps.googleusercontent.com</string>
 </resources>

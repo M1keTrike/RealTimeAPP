@@ -217,6 +217,11 @@ val surfaceContainerDarkHighContrast = Color(0xFF303036)
 val surfaceContainerHighDarkHighContrast = Color(0xFF3B3B41)
 val surfaceContainerHighestDarkHighContrast = Color(0xFF46464C)
 
+val DarkBackground = Color(0xFF0F0F0F)
+val InputBackground = Color(0xFF1A1A1A)
+val TextGray = Color(0xFF94A3B8)
+val BorderWhite = Color.White.copy(alpha = 0.05f)
+
 
 
 

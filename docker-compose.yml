@@ -1,4 +1,7 @@
 
+# Docker Compose lee automáticamente el archivo .env ubicado en este mismo
+# directorio. Copia .env.example → .env y rellena los valores antes de
+# ejecutar `docker compose up`.
 
 services:
   db-postgres:
@@ -6,36 +9,38 @@ services:
     container_name: mathduel_db
     restart: always
     environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: adminpassword
-      POSTGRES_DB: mathduel_db
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
-      - "5432:5432" # Puerto mapeado a tu computadora local
+      - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
 
   api-nest:
-    build: 
+    build:
       context: ./Backend/api
       dockerfile: Dockerfile
     container_name: mathduel_api
     restart: always
-    ports:
-      - "3000:3000" # Puerto mapeado a tu computadora local
+    expose:
+      - "3000"
     environment:
-      # Conexión a la base de datos (Nota que el DB_HOST es el nombre del contenedor de arriba)
+      # Conexión a la base de datos — DB_HOST usa el nombre del servicio Docker
       - DB_HOST=db-postgres
       - DB_PORT=5432
-      - DB_USER=admin
-      - DB_PASSWORD=adminpassword
-      - DB_NAME=mathduel_db
-      
-      # Variables de autenticación
-      - JWT_SECRET=tu_super_secreto_jwt_local
-      - JWT_EXPIRES_IN=7d
+      - DB_USER=${POSTGRES_USER}
+      - DB_PASSWORD=${POSTGRES_PASSWORD}
+      - DB_NAME=${POSTGRES_DB}
+
+      # Autenticación
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+
       - PORT=3000
     depends_on:
-      - db-postgres # Espera a que la base de datos inicie primero
+      - db-postgres
 
   ws-go:
     build:
@@ -43,16 +48,32 @@ services:
       dockerfile: Dockerfile
     container_name: mathduel_ws
     restart: always
-    ports:
-      - "8080:8080"
+    expose:
+      - "8080"
     environment:
       - PORT=8080
-      - JWT_SECRET=tu_super_secreto_jwt_local
+      - JWT_SECRET=${JWT_SECRET}
       - NESTJS_API_URL=http://api-nest:3000
-      - GAME_ROUNDS=5
-      - ROUND_TIMEOUT_SECONDS=30
+      - GAME_ROUNDS=${GAME_ROUNDS}
+      - ROUND_TIMEOUT_SECONDS=${ROUND_TIMEOUT_SECONDS}
     depends_on:
       - api-nest
+
+  nginx:
+      image: nginx:alpine
+      container_name: mathduel_nginx
+      restart: always
+      ports:
+        - "80:80"
+        - "443:443"
+      volumes:
+        - ./nginx/conf:/etc/nginx/conf.d:ro
+        - ./nginx/certbot/conf:/etc/letsencrypt:ro 
+      depends_on:
+        - api-nest
+        - ws-go
+    
+  
 
 volumes:
   pgdata:
