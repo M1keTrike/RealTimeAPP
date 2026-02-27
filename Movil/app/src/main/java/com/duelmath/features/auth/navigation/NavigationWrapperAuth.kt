@@ -11,7 +11,7 @@ import com.duelmath.features.auth.presentation.screens.LoginScreen
 import com.duelmath.features.auth.presentation.screens.RegisterScreen
 import javax.inject.Inject
 
-class AuthNavGraph @Inject constructor() : FeatureNavGraph {
+class NavigationWrapperAuth @Inject constructor() : FeatureNavGraph {
 
     override fun registerGraph(navGraphBuilder: NavGraphBuilder, navController: NavHostController) {
 

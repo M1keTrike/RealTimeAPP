@@ -71,7 +71,7 @@ class GameWebSocketDataSourceImpl @Inject constructor(
         }
 
         override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
-            _messages.tryEmit(GameWsMessage.Unknown)
+            _messages.tryEmit(GameWsMessage.ConnectionClosed)
         }
     }
 

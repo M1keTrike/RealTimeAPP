@@ -33,5 +33,8 @@ sealed class GameWsMessage {
     ) : GameWsMessage()
     data class Error(val code: String, val message: String) : GameWsMessage()
     data object Pong : GameWsMessage()
+    /** Server closed the WebSocket normally (e.g. after game_over). */
+    data object ConnectionClosed : GameWsMessage()
+    /** Unrecognised message type — indicates a protocol mismatch. */
     data object Unknown : GameWsMessage()
 }

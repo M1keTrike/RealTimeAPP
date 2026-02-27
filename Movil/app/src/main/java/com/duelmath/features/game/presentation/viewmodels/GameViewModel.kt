@@ -1,5 +1,6 @@
 package com.duelmath.features.game.presentation.viewmodels
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.duelmath.features.auth.data.datasources.local.AuthLocalDataSource
@@ -53,14 +54,19 @@ class GameViewModel @Inject constructor(
     private var lastProcessedRound = 0
 
     init {
+        Log.d("GameVM", "init — GameViewModel created (${hashCode()})")
         observeEvents()
         observeRoundResults()
         viewModelScope.launch { connectOnStart() }
     }
 
     private suspend fun connectOnStart() {
-        val token = authLocalDataSource.getToken() ?: return
+        val token = authLocalDataSource.getToken() ?: run {
+            Log.e("GameVM", "connectOnStart — token is null, aborting")
+            return
+        }
         myUserId = authLocalDataSource.getUserId()
+        Log.d("GameVM", "connectOnStart — connecting with userId=$myUserId")
         _uiState.update { it.copy(isConnecting = true) }
         connectToGameUseCase(token)
     }
@@ -76,6 +82,7 @@ class GameViewModel @Inject constructor(
     }
 
     fun disconnect() {
+        Log.d("GameVM", "disconnect called")
         countdownJob?.cancel()
         disconnectFromGameUseCase()
         _uiState.update { it.copy(isConnected = false) }
@@ -125,14 +132,18 @@ class GameViewModel @Inject constructor(
     }
 
     private suspend fun handleEvent(event: GameEvent) {
+        Log.d("GameVM", "handleEvent — ${event::class.simpleName}")
         when (event) {
             is GameEvent.Authenticated -> {
+                Log.d("GameVM", "Authenticated")
                 _uiState.update { it.copy(isConnecting = false, isConnected = true) }
             }
             is GameEvent.Waiting -> {
+                Log.d("GameVM", "Waiting for opponent")
                 _uiState.update { it.copy(isWaiting = true) }
             }
             is GameEvent.GameStarted -> {
+                Log.d("GameVM", "GameStarted — sessionId=${event.sessionId}, opponent=${event.opponentUsername}")
                 // Reset round tracking for the new game session
                 lastProcessedRound = 0
                 _uiState.update {
@@ -145,6 +156,7 @@ class GameViewModel @Inject constructor(
                 }
             }
             is GameEvent.RoundStarted -> {
+                Log.d("GameVM", "RoundStarted — round=${event.roundNumber}")
                 countdownJob?.cancel()
                 _uiState.update {
                     it.copy(
@@ -161,6 +173,7 @@ class GameViewModel @Inject constructor(
                 startCountdown(event.timeLimitSeconds)
             }
             is GameEvent.GameOver -> {
+                Log.d("GameVM", "GameOver — winnerId=${event.winnerId}, reason=${event.reason}")
                 countdownJob?.cancel()
                 val iWon = event.winnerId == myUserId
                 val isDraw = event.winnerId == null
@@ -198,6 +211,7 @@ class GameViewModel @Inject constructor(
                 }
             }
             is GameEvent.Error -> {
+                Log.e("GameVM", "Error — ${event.message}")
                 _uiState.update {
                     it.copy(
                         isConnecting = false,
@@ -208,6 +222,15 @@ class GameViewModel @Inject constructor(
                 _sideEffect.emit(GameSideEffect.Error(event.message))
             }
             is GameEvent.Disconnected -> {
+                Log.d("GameVM", "Disconnected — isGameOver=${_uiState.value.isGameOver}")
+                // If the game ended normally, the server closes the WebSocket right after
+                // sending game_over. In that case we silently update the connection flag
+                // without showing a misleading error to the user.
+                if (_uiState.value.isGameOver) {
+                    _uiState.update { it.copy(isConnected = false) }
+                    return
+                }
+                // Unexpected mid-game disconnect: update state and notify the user.
                 _uiState.update {
                     it.copy(
                         isConnecting = false,
@@ -230,6 +253,7 @@ class GameViewModel @Inject constructor(
     }
 
     override fun onCleared() {
+        Log.d("GameVM", "onCleared — ViewModel being destroyed (${hashCode()})")
         super.onCleared()
         disconnect()
     }

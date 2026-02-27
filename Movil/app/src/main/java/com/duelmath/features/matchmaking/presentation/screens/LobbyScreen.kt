@@ -1,5 +1,6 @@
 package com.duelmath.features.matchmaking.presentation.screens
 
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
@@ -35,24 +36,34 @@ fun LobbyScreen(
     val context = LocalContext.current
 
     // Refresh ELO every time this screen becomes active (e.g. returning from game)
+    // and clear any stale session so the match-found LaunchedEffect does not
+    // immediately re-navigate to a finished game.
     LaunchedEffect(Unit) {
+        Log.d("LobbyScreen", "LaunchedEffect(Unit) — clearing session & refreshing ELO")
+        viewModel.clearSession()
         viewModel.refreshElo()
     }
 
     LaunchedEffect(uiState.errorMessage) {
+        Log.d("LobbyScreen", "LaunchedEffect(errorMessage) — errorMessage=${uiState.errorMessage}")
         if (uiState.errorMessage != null) {
             Toast.makeText(context, uiState.errorMessage, Toast.LENGTH_LONG).show()
             viewModel.clearError()
         }
     }
 
-    LaunchedEffect(uiState.currentSession) {
-        if (uiState.currentSession?.status == GameSessionStatus.IN_PROGRESS) {
-            onMatchFound(uiState.currentSession!!.id)
+    LaunchedEffect(uiState.navigateToGameSessionId) {
+        val sessionId = uiState.navigateToGameSessionId
+        Log.d("LobbyScreen", "LaunchedEffect(navigateToGameSessionId) — sessionId=$sessionId")
+        if (sessionId != null) {
+            Log.d("LobbyScreen", ">>> NAVIGATING to GameRoute sessionId=$sessionId")
+            viewModel.onGameNavigated()   // consume immediately BEFORE navigating
+            onMatchFound(sessionId)
         }
     }
 
     LaunchedEffect(uiState.logoutSuccess) {
+        Log.d("LobbyScreen", "LaunchedEffect(logoutSuccess) — logoutSuccess=${uiState.logoutSuccess}")
         if (uiState.logoutSuccess) {
             onLogout()
         }

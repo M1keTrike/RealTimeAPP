@@ -1,5 +1,6 @@
 package com.duelmath.features.game.presentation.screens
 
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
@@ -47,6 +48,8 @@ fun GameScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+
+    Log.d("GameScreen", "Compose — sessionId=$sessionId, isConnecting=${uiState.isConnecting}, isWaiting=${uiState.isWaiting}, isGameOver=${uiState.isGameOver}, question=${uiState.question != null}")
 
     // One-time side-effects
     LaunchedEffect(Unit) {

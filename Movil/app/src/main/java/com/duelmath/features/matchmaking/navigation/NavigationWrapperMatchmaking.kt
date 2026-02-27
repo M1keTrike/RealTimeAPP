@@ -1,5 +1,6 @@
 package com.duelmath.features.matchmaking.navigation
 
+import android.util.Log
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
@@ -11,14 +12,18 @@ import com.duelmath.core.navigation.QuestionsRoute
 import com.duelmath.features.matchmaking.presentation.screens.LobbyScreen
 import javax.inject.Inject
 
-class MatchmakingNavGraph @Inject constructor() : FeatureNavGraph {
+class NavigationWrapperMatchmaking @Inject constructor() : FeatureNavGraph {
 
     override fun registerGraph(navGraphBuilder: NavGraphBuilder, navController: NavHostController) {
 
         navGraphBuilder.composable<LobbyRoute> {
+            Log.d("NavMatchmaking", "composable<LobbyRoute> — rendering LobbyScreen")
             LobbyScreen(
                 onMatchFound = { sessionId ->
-                    navController.navigate(GameRoute(sessionId))
+                    Log.d("NavMatchmaking", "onMatchFound — navigating to GameRoute sessionId=$sessionId")
+                    navController.navigate(GameRoute(sessionId)) {
+                        launchSingleTop = true
+                    }
                 },
                 onOpenQuestionsAdmin = {
                     navController.navigate(QuestionsRoute)
