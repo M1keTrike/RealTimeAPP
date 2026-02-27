@@ -5,6 +5,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import com.duelmath.core.navigation.FeatureNavGraph
 import com.duelmath.core.navigation.GameRoute
+import com.duelmath.core.navigation.LoginRoute
 import com.duelmath.core.navigation.LobbyRoute
 import com.duelmath.core.navigation.QuestionsRoute
 import com.duelmath.features.matchmaking.presentation.screens.LobbyScreen
@@ -22,6 +23,11 @@ class MatchmakingNavGraph @Inject constructor() : FeatureNavGraph {
                 onOpenQuestionsAdmin = {
                     navController.navigate(QuestionsRoute)
                 },
+                onLogout = {
+                    navController.navigate(LoginRoute) {
+                        popUpTo<LobbyRoute> { inclusive = true }
+                    }
+                }
             )
         }
     }
