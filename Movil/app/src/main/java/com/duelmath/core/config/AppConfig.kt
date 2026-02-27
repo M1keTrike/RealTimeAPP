@@ -2,14 +2,11 @@ package com.duelmath.core.config
 
 import com.duelmath.BuildConfig
 
-// ── Wrapper de seguridad para valores sensibles ───────────────────────────
-// toString() retorna "***" para evitar logging accidental en producción.
+
 @JvmInline
 value class Secret(val value: String) {
     override fun toString(): String = "***"
 }
-
-// ── Modelos de configuración jerárquica ───────────────────────────────────
 
 data class NetworkConfig(
     val apiBaseUrl: String,
@@ -23,9 +20,6 @@ data class AuthConfig(
     val googleWebClientId: Secret
 )
 
-// ── Singleton de configuración cargado desde BuildConfig ─────────────────
-// Todos los módulos Hilt consumen de aquí. Ningún valor hardcodeado fuera
-// de este objeto.
 object AppConfig {
 
     val network: NetworkConfig by lazy {

@@ -8,5 +8,6 @@ data class LobbyState(
     val currentSession: GameSession? = null,
     val isAdmin: Boolean = false,
     val logoutSuccess: Boolean = false,
-    val currentElo: Int? = null
+    val currentElo: Int? = null,
+    val navigateToGameSessionId: String? = null
 )

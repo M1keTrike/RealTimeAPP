@@ -8,7 +8,8 @@ import com.duelmath.core.navigation.QuestionsRoute
 import com.duelmath.features.questions.presentation.screens.QuestionsScreen
 import javax.inject.Inject
 
-class QuestionsNavGraph @Inject constructor() : FeatureNavGraph {
+class NavigationWrapperQuestions @Inject constructor() : FeatureNavGraph {
+
     override fun registerGraph(navGraphBuilder: NavGraphBuilder, navController: NavHostController) {
         navGraphBuilder.composable<QuestionsRoute> {
             QuestionsScreen(

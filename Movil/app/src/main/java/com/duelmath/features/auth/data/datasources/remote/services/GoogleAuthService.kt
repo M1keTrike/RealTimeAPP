@@ -17,13 +17,6 @@ class GoogleAuthService @Inject constructor(
     private val firebaseAuth: FirebaseAuth,
     private val credentialManager: CredentialManager
 ) {
-    /**
-     * Inicia el flujo de Google Sign-In usando Credential Manager.
-     * Autentica en Firebase y retorna el idToken para enviarlo al backend.
-     *
-     * @param context Activity context requerido por Credential Manager para mostrar el selector.
-     * @return idToken de Google/Firebase para autenticarse en el backend.
-     */
     suspend fun getIdToken(context: Context): String {
         val googleIdOption = GetGoogleIdOption.Builder()
             .setFilterByAuthorizedAccounts(false)

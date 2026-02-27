@@ -137,6 +137,12 @@ class GameRepositoryImpl @Inject constructor(
             is GameWsMessage.Error -> {
                 _events.emit(GameEvent.Error(message.code, message.message))
             }
+            // Normal server-initiated close (e.g. after game_over): signal disconnection
+            // so the ViewModel can update isConnected, but without treating it as an error.
+            is GameWsMessage.ConnectionClosed -> {
+                _events.emit(GameEvent.Disconnected)
+            }
+            // Unknown message type: protocol mismatch — treat as unexpected disconnection.
             is GameWsMessage.Unknown -> {
                 _events.emit(GameEvent.Disconnected)
             }
