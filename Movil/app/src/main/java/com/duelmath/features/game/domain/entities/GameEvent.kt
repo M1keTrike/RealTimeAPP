@@ -14,7 +14,6 @@ sealed class GameEvent {
         val question: GameQuestion,
         val timeLimitSeconds: Int
     ) : GameEvent()
-    data class RoundEnded(val result: RoundResult) : GameEvent()
     data class GameOver(
         val winnerId: String?,
         val reason: String,
